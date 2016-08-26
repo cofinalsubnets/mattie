@@ -1,68 +1,15 @@
-(library (px stateful-parsers)
-         (export term comp disj conj conc lmap
-                 lang-f lang-t lang-0 lang-1
-                 opt rep alt cat one-of
-                 ws ws* ws+ decimal-digit
-                 english-letter contains)
-         (import (rnrs))
-
-  (define (term t)
-      (lambda (s st)
-        (let ((lt (string-length t))
-              (ls (string-length s)))
-          (and (>= ls lt)
-               (string=? t (substring s 0 lt))
-               (list t (substring s lt ls) st)))))
-
-  (define (comp l) (lambda (s st) (and (not (l s st)) (list s "" st))))
-  (define (disj a b) (lambda (s st) (or (a s st) (b s st))))
-
-  (define (conj a b)
-    (lambda (s st) (let ((ar (a s st))) (and ar (b s (caddr ar))))))
-  (define (conc a b)
-    (lambda (s st)
-      (let ((ar (a s st)))
-        (and ar (let ((br (b (cadr ar) (caddr ar))))
-                  (and br (cons (string-append (car ar) (car br)) (cdr br))))))))
-  (define (lmap f l)
-    (lambda (s st)
-      (let ((r (l s st)))
-        (and r (list (car r) (cadr r) (f (car r) (caddr r)))))))
-
-  (define (contains l s) (let ((r (l s '()))) (and r (string=? "" (cadr r)))))
-
-  (define (lang-f s st) #f)
-  (define lang-t (comp lang-f))
-  (define lang-0 (term ""))
-  (define (lang-1 s st) (and (> (string-length s) 0)
-                             (list (string (string-ref s 0))
-                                   (substring s 1 (string-length s))
-                                   st)))
-
-  (define (opt l) (disj l lang-0))
-  (define (rep l) (opt (conc l (lambda (s st) ((rep l) s st)))))
-  (define (alt . ls) (fold-right disj lang-f ls))
-  (define (cat . ls) (fold-right conc lang-0 ls))
-  (define (one-of cs)
-    (let ((cs (string->list cs)))
-      (lambda (s st)
-        (let ((ls (string-length s)))
-          (and (> ls 0)
-               (let* ((c (string-ref s 0))
-                      (m (find (lambda (x) (char=? x c)) cs)))
-                 (and m (list (string m) (substring s 1 ls) st))))))))
-
-  (define ws (one-of " \n\t\r"))
-  (define ws* (rep ws))
-  (define ws+ (conc ws ws*))
-  (define decimal-digit
-    (one-of "0123456789"))
-  (define english-letter
-    (one-of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")))
-
-(library (px lang)
-         (export px-lang)
-         (import (rnrs) (px stateful-parsers))
+(library (mattie parsers language)
+         (export program dot
+                 (rename (defn definition)
+                         (cat- catenation)
+                         (and- conjunction)
+                         (alt- disjunction)
+                         (neg- complement)
+                         (opt- option)
+                         (rep- repetition)
+                         (term- terminal)
+                         (word atom)))
+         (import (rnrs) (mattie parsers stateful))
 
   (define (tag-terminal t l)
     (lmap (lambda (s st) (cons (cons t s) st)) l))
@@ -71,7 +18,8 @@
   (define (tag-unary t l)
     (lmap (lambda (s st) (cons (cons t (car st)) (cdr st))) l))
   (define (tag-binary t l)
-    (lmap (lambda (s st) (cons (cons t (cons (cadr st) (car st))) (cddr st))) l))
+    (lmap (lambda (s st) (cons (cons t (cons (cadr st) (car st)))
+                               (cddr st))) l))
 
   (define word
     (let* ((word-start (disj english-letter (one-of "_")))
@@ -95,12 +43,12 @@
   (define cat- (tag-binary 'cat (cat uni ws* expr)))
   (define and- (tag-binary 'and (cat uni ws* (term "&") ws* expr)))
   (define defn (tag-binary 'def (cat ws* word ws* (term "<-") ws* expr)))
-  (define lang (cat defn (rep defn) ws*))
+  (define program (cat defn (rep defn) ws*))
 
   (define (px-lang s)
-    (let ((r (lang s '())))
-      (and r (string=? (cadr r) "")
-           (let ((defs (caddr r)))
+    (let ((r (program s '())))
+      (and r (string=? (car r) "")
+           (let ((defs (cdr r)))
              (validate-defs defs)
              (make-lang defs)))))
 
@@ -117,7 +65,7 @@
 
   (define (get-syms d)
     (if (eq? (car d) 'atom) (list (cdr d))
-      (case (car d)
+      (case (cdr (assq (car d) arities))
         ((0) '())
         ((1) (get-syms (cdr d)))
         ((2) (append (get-syms (cadr d)) (get-syms (cddr d)))))))
@@ -125,10 +73,20 @@
   (define (validate-defs ds)
     (let ((rules (map cdadr ds)))
       (assert (member "main" rules))
-      (let* ((rs (fold-left append '()
-                            (map (lambda (d) (get-syms (cddr d))) ds)))
+      (let* ((ss (map (lambda (d) (get-syms (cddr d))) ds))
+             (rs (fold-left append '() ss))
              (undefined-rules (filter (lambda (s) (not (member s rules))) rs)))
         (assert (null? undefined-rules)))))
+
+  (define (unescape-term t)
+    (let ((inner (substring t 1 (- (string-length t) 1))))
+      (list->string
+        (let loop ((cs (string->list inner)))
+          (cond ((null? cs) cs)
+                ((char=? (car cs) #\\)
+                 (assert (not (null? (cdr cs)))) ;; grammar should ensure this
+                 (loop (cons (cadr cs) (cddr cs))))
+                (else (cons (car cs) (loop (cdr cs)))))))))
 
   (define (make-lang defs)
 
@@ -136,7 +94,7 @@
       `((cat . ,conc)
         (alt . ,disj)
         (and . ,conj)
-        (term . ,term)
+        (term . ,(lambda (t) (term (unescape-term t))))
         (opt . ,opt)
         (neg . ,comp)
         (dot . ,(lambda _ lang-1))
@@ -162,4 +120,3 @@
     (define tbl (fold-left r '() defs))
 
     (cdr (assq 'main tbl))))
-
