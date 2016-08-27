@@ -20,14 +20,20 @@
 
   (define (map- f l) (if (null? l) '() (cons (f (car l)) (map- f (cdr l)))))
 
+  (define (run-tests ts p n l)
+    (if (null? ts) '()
+      (begin
+        (show "\r" p "(" n "/" l ")")
+        (cons ((car ts)) (run-tests (cdr ts) p (+ n 1) l)))))
+
+
   (define (run-test-suite name ts)
-    (show "Running " name " ")
-    (let* ((rs (map- run-test ts))
+    (let* ((rs (run-tests ts (string-append name " ") 1 (length ts)))
            (fs (filter failed? rs)))
       (if (null? fs)
-        (show " :D ok!\n")
+        (show " - :D ok!\n")
         (begin
-          (show " D: oh no\n" (length fs) " failures:\n")
+          (show " - D: oh no\n" (length fs) " failures:\n")
           (let loop ((n 1) (f fs))
             (if (null? f) '()
               (begin

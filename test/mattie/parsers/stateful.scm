@@ -1,4 +1,4 @@
-(library (test parsers stateful)
+(library (test mattie parsers stateful)
          (export stateful-parser-tests)
          (import (rnrs) (mattie parsers stateful) (test util))
   (define parses contains)
