@@ -57,8 +57,7 @@
   (define (make-lang defs entry-point)
     (define handlers
       `((lcat . ,conc)
-        (rcat . ,(λ (a b) (λ x (string-append (apply a x)
-                                                        (apply b x)))))
+        (rcat . ,(λ (a b) (λ x (string-append (apply a x) (apply b x)))))
         (alt . ,disj)
         (and . ,conj)
         (map . ,(λ (a f) (lmap f a)))
