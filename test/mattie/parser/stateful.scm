@@ -1,7 +1,8 @@
-(library (test mattie parsers stateful)
+(library (test mattie parser stateful)
          (export stateful-parser-tests)
-         (import (rnrs) (mattie parsers stateful) (test util))
-  (define parses contains)
+         (import (rnrs)
+                 (mattie parser stateful)
+                 (test util))
 
   (define digit
     (alt "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"))

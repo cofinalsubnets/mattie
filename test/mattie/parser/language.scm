@@ -1,9 +1,10 @@
-(library (test mattie parsers language)
+(library (test mattie parser language)
          (export language-parser-tests language-tests-for)
          (import (rnrs)
-                 (rename (mattie parsers stateful) (contains parses))
-                 (mattie parsers language)
+                 (mattie parser stateful)
+                 (mattie parser language)
                  (test util))
+
   (define program (make-language-parser))
   (define (language-tests-for program)
     (tests

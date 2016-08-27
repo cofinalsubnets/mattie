@@ -1,9 +1,9 @@
-(library (mattie parsers stateful)
+(library (mattie parser stateful)
          (export term comp disj conj conc lmap
                  lang-f lang-t lang-0 lang-1
                  opt rep alt cat one-of
                  ws ws* ws+ decimal-digit
-                 english-letter contains)
+                 english-letter parses)
          (import (rnrs))
 
   (define (term t)
@@ -33,7 +33,7 @@
                                           (string-length (car r)))) 
                         (cdr r)))))))
 
-  (define (contains l s) (let ((r (l s '()))) (and r (string=? "" (car r)))))
+  (define (parses l s) (let ((r (l s '()))) (and r (string=? "" (car r)))))
 
   (define (lang-f s st) #f)
   (define lang-t (comp lang-f))

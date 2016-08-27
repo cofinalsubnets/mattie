@@ -1,8 +1,8 @@
 (library (mattie interpreter)
          (export make-interpreter)
          (import (rnrs)
-                 (mattie parsers stateful)
-                 (mattie parsers language))
+                 (mattie parser stateful)
+                 (mattie parser language))
 
   (define (make-interpreter src entry-point)
     (let ((r ((make-language-parser) src '())))

@@ -1,6 +1,6 @@
-(library (mattie parsers language)
+(library (mattie parser language)
          (export make-language-parser)
-         (import (rnrs) (mattie parsers stateful))
+         (import (rnrs) (mattie parser stateful))
 
   (define (tag-terminal t l)
     (lmap (lambda (s st) (cons (cons t s) st)) l))

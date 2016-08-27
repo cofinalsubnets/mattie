@@ -1,6 +1,10 @@
 (library (test mattie interpreter)
          (export interpreter-tests)
-         (import (rnrs) (test util) (mattie interpreter) (rename (mattie parsers stateful) (contains parses)))
+         (import (rnrs)
+                 (test util)
+                 (mattie interpreter)
+                 (mattie parser stateful))
+
   (define interpreter-tests (tests
     ("reject programs with undefined symbols"
      (assert (guard (_ (#t #t)) (make-interpreter "a <- b" "a") #f)))
