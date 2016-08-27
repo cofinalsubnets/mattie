@@ -40,6 +40,15 @@
       ("parentheses"
        (let ((r (program "a <- b (c | d)" "")))
          (assert (equal? (caddr (cadr r)) 'cat))))
+      ("nested parentheses"
+       (assert (parses program "a <- ((b))")))
+      ("multiple suffixes"
+       (let ((r (program "a <- b~*?" "")))
+         (assert (equal? (caddr  (cadr r)) 'opt))
+         (assert (equal? (cadddr (cadr r)) 'rep))
+         (assert (equal? (cadddr (cdadr r)) 'neg))))
+      ("leading & trailing whitespace"
+       (assert (parses program "  a <- \nb \t")))
       ))
     
   (define language-parser-tests (language-tests-for program)))
