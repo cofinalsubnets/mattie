@@ -39,6 +39,7 @@
             (let ((r (apply p args))) (hashtable-set! ht args r) r) v)))))
 
   (define dot (tag-nullary 'dot (term ".")))
+  (define $ (tag-nullary 'state (term "$")))
   (define rep- (tag-unary 'rep (term "*")))
   (define opt- (tag-unary 'opt (term "?")))
   (define neg- (tag-unary 'neg (term "~")))
@@ -52,7 +53,7 @@
     (define prec3 (packrat (lambda (s st) ((disj and- prec2) s st))))
     (define prec4 (packrat (lambda (s st) ((disj alt- prec3) s st))))
     (define prec5 (packrat (lambda (s st) ((disj map- prec4) s st))))
-    (define (map-rhs-unit s st) ((disj rterm (notp defn word)) s st))
+    (define (map-rhs-unit s st) ((alt $ rterm (notp defn word)) s st))
     (define (map-rhs-cat s st)
       ((tag-binary 'rcat (cat map-rhs-unit ws* (disj map-rhs-cat map-rhs-unit))) s st))
     (define map-rhs (disj map-rhs-cat map-rhs-unit))

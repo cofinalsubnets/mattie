@@ -37,6 +37,8 @@
        (assert (parses program "a <- \"b\" -> q \"qwer\" x")))
       ("match application followed by definition"
        (assert (parses program "a <- \"b\" -> q x <- y")))
+      ("match application state reference"
+       (assert (parses program "a <- \"b\" -> $ \".\"")))
       ("concatenation precedes disjunction"
        (let ((r (program "a <- b c | d" "")))
          (assert (equal? (caddr (cadr r)) 'alt))))

@@ -22,7 +22,8 @@
         (atom . 0)
         (lterm . 0)
         (rterm . 0)
-        (dot . 0)))
+        (dot . 0)
+        (state . 0)))
 
   (define (get-syms d)
     (if (eq? (car d) 'atom) (list (cdr d))
@@ -64,6 +65,7 @@
         (opt . ,opt)
         (neg . ,comp)
         (dot . ,(lambda _ lang-1))
+        (state . ,(lambda _ (lambda (_ st) st)))
         (rep . ,(lambda (l) (if (eq? l lang-1) lang-t (rep l))))
         (atom . ,(lambda (a)
                    (define (f s st) ;; only assq once
