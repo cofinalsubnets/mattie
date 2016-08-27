@@ -15,6 +15,7 @@
       `((cat . 2)
         (alt . 2)
         (and . 2)
+        (map . 2)
         (rep . 1)
         (opt . 1)
         (neg . 1)
@@ -53,6 +54,7 @@
       `((cat . ,conc)
         (alt . ,disj)
         (and . ,conj)
+        (map . ,(lambda (a _) a)) ;; noop for now
         (term . ,(lambda (t) (term (unescape-term t))))
         (opt . ,opt)
         (neg . ,comp)

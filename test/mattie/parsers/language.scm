@@ -28,6 +28,8 @@
        (assert (parses program "a <- \"bc\" \"q\"")))
       ("terminals containing escaped quotes"
        (assert (parses program "a <- \"\\\"\"")))
+      ("match application"
+       (assert (parses program "a <- \"b\" -> q")))
       ("concatenation precedes disjunction"
        (let ((r (program "a <- b c | d" "")))
          (assert (equal? (caddr (cadr r)) 'alt))))
