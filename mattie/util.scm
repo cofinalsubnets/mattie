@@ -17,7 +17,6 @@
        (let ((name expr)) (and name (let-when (bs ...) body ...))))
       ((let-when () body ...) (begin body ...))))
 
-
   (define (id x) x)
   (define (const x) (λ _ x))
   (define (compose f g) (λ x (f (apply g x)))))

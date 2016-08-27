@@ -7,7 +7,8 @@
 
   (define (make-interpreter src entry-point)
     (let ((r ((make-language-parser) src)))
-      (validate-parse r)
+      (assert r)
+      (assert (string=? (car r) ""))
       (validate-defs (cdr r) entry-point)
       (make-lang (cdr r) entry-point)))
 
@@ -32,10 +33,6 @@
         ((1) (get-syms (cdr d)))
         ((2) (append (get-syms (cadr d)) (get-syms (cddr d)))))))
 
-  (define (validate-parse parse)
-      (assert parse)
-      (assert (string=? (car parse) "")))
-
   (define (validate-defs ds entry-point)
     (let ((rules (map cdadr ds)))
       (assert (member entry-point rules))
@@ -45,41 +42,43 @@
         (assert (null? undefined-rules)))))
 
   (define (unescape-term t)
-    (let ((inner (substring t 1 (- (string-length t) 1))))
-      (list->string
-        (let loop ((cs (string->list inner)))
-          (cond ((null? cs) cs)
-                ((char=? (car cs) #\\)
-                 (assert (not (null? (cdr cs)))) ;; grammar should prevent this
-                 (loop (cons (cadr cs) (cddr cs))))
-                (else (cons (car cs) (loop (cdr cs)))))))))
+    (list->string
+      (let loop ((cs (string->list (substring t 1 (- (string-length t) 1)))))
+        (cond ((null? cs) cs)
+              ((char=? (car cs) #\\)
+               (assert (not (null? (cdr cs)))) ;; grammar should prevent this
+               (loop (cons (cadr cs) (cddr cs))))
+              (else (cons (car cs) (loop (cdr cs))))))))
+
+  (define base-handlers ;; everything except atoms, which are handled
+    `((lcat . ,conc)    ;; according to the production rule they name
+      (rcat . ,(λ (a b) (λ x (string-append (apply a x) (apply b x)))))
+      (alt . ,disj)
+      (and . ,conj)
+      (map . ,(λ (a f) (lmap f a)))
+      (lterm . ,(λ (t) (term (unescape-term t))))
+      (rterm . ,(λ (t) (const (unescape-term t))))
+      (opt . ,opt)
+      (neg . ,comp)
+      (dot . ,(const lang-1))
+      (state . ,(const (λ (_ st) st)))
+      (rep . ,(λ (l) (if (eq? l lang-1) lang-t (rep l))))))
+
+  (define (linguify b hs)
+    (apply (cdr (assq (car b) hs))
+           (case (cdr (assq (car b) arities))
+             ((0) (list (cdr b)))
+             ((1) (list (linguify (cdr b) hs)))
+             ((2) (list (linguify (cadr b) hs) (linguify (cddr b) hs))))))
 
   (define (make-lang defs entry-point)
-    (define handlers
-      `((lcat . ,conc)
-        (rcat . ,(λ (a b) (λ x (string-append (apply a x) (apply b x)))))
-        (alt . ,disj)
-        (and . ,conj)
-        (map . ,(λ (a f) (lmap f a)))
-        (lterm . ,(λ (t) (term (unescape-term t))))
-        (rterm . ,(λ (t) (const (unescape-term t))))
-        (opt . ,opt)
-        (neg . ,comp)
-        (dot . ,(const lang-1))
-        (state . ,(const (λ (_ st) st)))
-        (rep . ,(λ (l) (if (eq? l lang-1) lang-t (rep l))))
-        (atom . ,(λ (a) (define-lazy f (cdr (assq (string->symbol a) _tbl_)))
-                        f))))
+    (define (dispatch a)
+      (define-lazy f (cdr (assq (string->symbol a) _tbl_))) f)
 
-    (define (linguify b)
-        (apply (cdr (assq (car b) handlers))
-               (case (cdr (assq (car b) arities))
-                 ((0) (list (cdr b)))
-                 ((1) (list (linguify (cdr b))))
-                 ((2) (list (linguify (cadr b)) (linguify (cddr b)))))))
+    (define handlers (cons (cons 'atom dispatch) base-handlers))
 
     (define (add-entry t d)
-        (cons (cons (string->symbol (cdadr d)) (linguify (cddr d))) t))
+        (cons (cons (string->symbol (cdadr d)) (linguify (cddr d) handlers)) t))
 
     (define _tbl_ (fold-left add-entry '() defs))
     (cdr (assq (string->symbol entry-point) _tbl_))))

@@ -4,42 +4,42 @@
                  (mattie parser)
                  (test util))
 
-  (define (parses p s) (let ((r (p s))) (and r (string=? (car r) ""))))
+  (define (language-contains? p s) (let ((r (p s))) (and r (string=? (car r) ""))))
 
   (define (parser-tests-for program)
     (tests
       ("one simple rule"
-       (assert (parses program "a <- b")))
+       (assert (language-contains? program "a <- b")))
       ("multiple rules"
-       (assert (parses program "a <- b c <- d q <- p")))
+       (assert (language-contains? program "a <- b c <- d q <- p")))
       ("concatenation"
-       (assert (parses program "a <- b c")))
+       (assert (language-contains? program "a <- b c")))
       ("disjunction"
-       (assert (parses program "a <- b | c")))
+       (assert (language-contains? program "a <- b | c")))
       ("conjunction"
-       (assert (parses program "a <- b & c")))
+       (assert (language-contains? program "a <- b & c")))
       ("complement"
-       (assert (parses program "a <- b~")))
+       (assert (language-contains? program "a <- b~")))
       ("repetition"
-       (assert (parses program "a <- b*")))
+       (assert (language-contains? program "a <- b*")))
       ("option"
-       (assert (parses program "a <- b?")))
+       (assert (language-contains? program "a <- b?")))
       ("dot"
-       (assert (parses program "a <- .")))
+       (assert (language-contains? program "a <- .")))
       ("terminals"
-       (assert (parses program "a <- \"bc\" \"q\"")))
+       (assert (language-contains? program "a <- \"bc\" \"q\"")))
       ("terminals containing escaped quotes"
-       (assert (parses program "a <- \"\\\"\"")))
+       (assert (language-contains? program "a <- \"\\\"\"")))
       ("match application on an atom"
-       (assert (parses program "a <- \"b\" -> q")))
+       (assert (language-contains? program "a <- \"b\" -> q")))
       ("match application on a terminal"
-       (assert (parses program "a <- \"b\" -> \"q\"")))
+       (assert (language-contains? program "a <- \"b\" -> \"q\"")))
       ("match application on a sequence of atoms and terminals"
-       (assert (parses program "a <- \"b\" -> q \"qwer\" x")))
+       (assert (language-contains? program "a <- \"b\" -> q \"qwer\" x")))
       ("match application followed by definition"
-       (assert (parses program "a <- \"b\" -> q x <- y")))
+       (assert (language-contains? program "a <- \"b\" -> q x <- y")))
       ("match application state reference"
-       (assert (parses program "a <- \"b\" -> $ \".\"")))
+       (assert (language-contains? program "a <- \"b\" -> $ \".\"")))
       ("concatenation precedes disjunction"
        (let ((r (program "a <- b c | d")))
          (assert (equal? (caddr (cadr r)) 'alt))))
@@ -53,13 +53,13 @@
        (let ((r (program "a <- b (c | d)")))
          (assert (equal? (caddr (cadr r)) 'lcat))))
       ("nested parentheses"
-       (assert (parses program "a <- ((b))")))
+       (assert (language-contains? program "a <- ((b))")))
       ("multiple suffixes"
        (let ((r (program "a <- b~*?")))
          (assert (equal? (caddr  (cadr r)) 'opt))
          (assert (equal? (cadddr (cadr r)) 'rep))
          (assert (equal? (cadddr (cdadr r)) 'neg))))
       ("leading & trailing whitespace"
-       (assert (parses program "  a <- \nb \t")))))
+       (assert (language-contains? program "  a <- \nb \t")))))
     
   (define parser-tests (parser-tests-for (make-language-parser))))
