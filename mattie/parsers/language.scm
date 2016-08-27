@@ -27,7 +27,7 @@
       (tag-terminal 'atom (conc word-start (rep word-cont)))))
 
   (define term-
-    (let ((term-part (disj (conj (comp (term "\"")) lang-1) (term "\\\""))))
+    (let ((term-part (disj (term "\\\"") (conj (comp (term "\"")) lang-1))))
       (tag-terminal 'term (cat (term "\"") (rep term-part) (term "\"")))))
 
   (define (paren s st) ((cat (term "(") ws* expr ws* (term ")")) s st))

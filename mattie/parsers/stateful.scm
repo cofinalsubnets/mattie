@@ -41,10 +41,11 @@
   (define (lang-1 s st) (and (> (string-length s) 0)
                              (cons (substring s 1 (string-length s)) st)))
 
+  (define (term~ x) (if (string? x) (term x) x))
   (define (opt l) (disj l lang-0))
   (define (rep l) (opt (conc l (lambda (s st) ((rep l) s st)))))
-  (define (alt . ls) (fold-right disj lang-f ls))
-  (define (cat . ls) (fold-right conc lang-0 ls))
+  (define (alt . ls) (fold-right disj lang-f (map term~ ls)))
+  (define (cat . ls) (fold-right conc lang-0 (map term~ ls)))
   (define (one-of cs)
     (let ((cs (string->list cs)))
       (lambda (s st)
