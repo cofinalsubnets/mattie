@@ -50,7 +50,7 @@
         (let loop ((cs (string->list inner)))
           (cond ((null? cs) cs)
                 ((char=? (car cs) #\\)
-                 (assert (not (null? (cdr cs)))) ;; grammar should ensure this
+                 (assert (not (null? (cdr cs)))) ;; grammar should prevent this
                  (loop (cons (cadr cs) (cddr cs))))
                 (else (cons (car cs) (loop (cdr cs)))))))))
 

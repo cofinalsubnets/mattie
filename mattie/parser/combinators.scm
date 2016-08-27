@@ -17,10 +17,10 @@
   (define (disj a b) (λ (s st) (or (a s st) (b s st))))
 
   (define (conj a b)
-    (λ (s st) (let ((ar (a s st))) (and ar (b s (cdr ar))))))
+    (λ (s st) (let-when ((ar (a s st))) (b s (cdr ar)))))
 
   (define (conc a b)
-    (λ (s st) (let ((ar (a s st))) (and ar (b (car ar) (cdr ar))))))
+    (λ (s st) (let-when ((ar (a s st))) (b (car ar) (cdr ar)))))
 
   ;; hack to make sure state is ignored lmapped fns. it would be nice be able
   ;; to use gensym for this.
@@ -35,8 +35,7 @@
                                             (string-length (car r))))
                           (cdr r))))))))
 
-  (define (run-stateless p s) (let ((r (p s signal-stateless)))
-                                (and r (car r))))
+  (define (run-stateless p s) (let-when ((r (p s signal-stateless))) (car r)))
 
   (define (parses l s) (equal? "" (run-stateless l s)))
 
