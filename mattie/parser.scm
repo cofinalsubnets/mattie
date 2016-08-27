@@ -1,6 +1,6 @@
-(library (mattie parser language)
+(library (mattie parser)
          (export make-language-parser)
-         (import (rnrs) (mattie parser stateful))
+         (import (rnrs) (mattie parser combinators))
 
   (define (tag-terminal t l)
     (lmap (lambda (s st) (cons (cons t s) st)) l))
@@ -27,7 +27,7 @@
     (let ((term-part (disj (term "\\\"") (conj (comp (term "\"")) lang-1))))
       (tag-terminal 'term (cat (term "\"") (rep term-part) (term "\"")))))
 
-  (define (memoize p)
+  (define (packrat p)
     (let ((ht (make-hashtable equal-hash equal?)))
       (lambda args
         (let ((v (hashtable-ref ht args '())))
@@ -39,15 +39,15 @@
   (define opt- (tag-unary 'opt (term "?")))
   (define neg- (tag-unary 'neg (term "~")))
 
-  ;; this is a thunk so packrat memo tables can be gc'd
+  ;; this is a thunk so packrat tables can be gc'd
   (define (make-language-parser)
-    (define prec0 (memoize
+    (define prec0 (packrat
       (lambda (s st) ((alt paren term- dot (conj (comp defn) word)) s st))))
-    (define prec1 (memoize (cat prec0 (rep (alt rep- opt- neg-)))))
-    (define prec2 (memoize (lambda (s st) ((disj cat- prec1) s st))))
-    (define prec3 (memoize (lambda (s st) ((disj and- prec2) s st))))
-    (define prec4 (memoize (lambda (s st) ((disj alt- prec3) s st))))
-    (define prec5 (memoize (lambda (s st) ((disj map- prec4) s st))))
+    (define prec1 (packrat (cat prec0 (rep (alt rep- opt- neg-)))))
+    (define prec2 (packrat (lambda (s st) ((disj cat- prec1) s st))))
+    (define prec3 (packrat (lambda (s st) ((disj and- prec2) s st))))
+    (define prec4 (packrat (lambda (s st) ((disj alt- prec3) s st))))
+    (define prec5 (packrat (lambda (s st) ((disj map- prec4) s st))))
     (define (paren s st) ((cat (term "(") ws* prec5 ws* (term ")")) s st))
     (define cat- (tag-binary 'cat (cat prec1 ws*                prec2)))
     (define and- (tag-binary 'and (cat prec2 ws* (term "&") ws* prec3)))

@@ -1,7 +1,7 @@
-(library (test mattie parser stateful)
-         (export stateful-parser-tests)
+(library (test mattie parser combinators)
+         (export parser-combinator-tests)
          (import (rnrs)
-                 (mattie parser stateful)
+                 (mattie parser combinators)
                  (test util))
 
   (define digit
@@ -13,7 +13,7 @@
   (define (final-state p s i)
     (let ((r (p s i))) (and r (string=? "" (car r)) (cdr r))))
 
-  (define stateful-parser-tests (tests
+  (define parser-combinator-tests (tests
 
     ("terminals"
      (assert (parses (term "asdf") "asdf"))

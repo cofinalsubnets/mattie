@@ -3,7 +3,7 @@
          (import (rnrs)
                  (test util)
                  (mattie interpreter)
-                 (mattie parser stateful))
+                 (mattie parser combinators))
 
   (define interpreter-tests (tests
     ("reject programs with undefined symbols"
@@ -29,5 +29,4 @@
         main <- even odd even")
      (define prog (make-interpreter src "main"))
      (assert (parses prog "032"))
-     (assert (not (parses prog "201"))))
-    )))
+     (assert (not (parses prog "201")))))))

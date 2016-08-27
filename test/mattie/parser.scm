@@ -1,12 +1,11 @@
-(library (test mattie parser language)
-         (export language-parser-tests language-tests-for)
+(library (test mattie parser)
+         (export parser-tests parser-tests-for)
          (import (rnrs)
-                 (mattie parser stateful)
-                 (mattie parser language)
+                 (mattie parser)
+                 (mattie parser combinators)
                  (test util))
 
-  (define program (make-language-parser))
-  (define (language-tests-for program)
+  (define (parser-tests-for program)
     (tests
       ("one simple rule"
        (assert (parses program "a <- b")))
@@ -52,7 +51,6 @@
          (assert (equal? (cadddr (cadr r)) 'rep))
          (assert (equal? (cadddr (cdadr r)) 'neg))))
       ("leading & trailing whitespace"
-       (assert (parses program "  a <- \nb \t")))
-      ))
+       (assert (parses program "  a <- \nb \t")))))
     
-  (define language-parser-tests (language-tests-for program)))
+  (define parser-tests (parser-tests-for (make-language-parser))))

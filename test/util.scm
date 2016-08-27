@@ -26,7 +26,6 @@
         (show "\r" p "(" n "/" l ")")
         (cons ((car ts)) (run-tests (cdr ts) p (+ n 1) l)))))
 
-
   (define (run-test-suite name ts)
     (let* ((rs (run-tests ts (string-append name " ") 1 (length ts)))
            (fs (filter failed? rs)))

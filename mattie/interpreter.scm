@@ -1,15 +1,14 @@
 (library (mattie interpreter)
          (export make-interpreter)
          (import (rnrs)
-                 (mattie parser stateful)
-                 (mattie parser language))
+                 (mattie parser)
+                 (mattie parser combinators))
 
   (define (make-interpreter src entry-point)
     (let ((r ((make-language-parser) src '())))
       (and r (string=? (car r) "")
-           (let ((defs (cdr r)))
-             (validate-defs defs entry-point)
-             (make-lang defs entry-point)))))
+             (validate-defs (cdr r) entry-point)
+             (make-lang (cdr r) entry-point))))
 
   (define arities
       `((cat . 2)
@@ -49,7 +48,6 @@
                 (else (cons (car cs) (loop (cdr cs)))))))))
 
   (define (make-lang defs entry-point)
-
     (define handlers
       `((cat . ,conc)
         (alt . ,disj)
@@ -61,9 +59,8 @@
         (dot . ,(lambda _ lang-1))
         (rep . ,(lambda (l) (if (eq? l lang-1) lang-t (rep l))))
         (atom . ,(lambda (a)
-                   (define sym (string->symbol a))
-                   (define (f s st)
-                     (set! f (cdr (assq sym tbl)))
+                   (define (f s st) ;; only assq once
+                     (set! f (cdr (assq (string->symbol a) _tbl_)))
                      (f s st))
                    (lambda (s st) (f s st ))))))
 
@@ -74,10 +71,8 @@
                  ((1) (list (linguify (cdr b))))
                  ((2) (list (linguify (cadr b)) (linguify (cddr b)))))))
 
-    (define (r t d)
-      (let-values (((name body) (values (cdadr d) (cddr d))))
-        (cons (cons (string->symbol name) (linguify body)) t)))
+    (define (add-entry t d)
+        (cons (cons (string->symbol (cdadr d)) (linguify (cddr d))) t))
 
-    (define tbl (fold-left r '() defs))
-
-    (cdr (assq (string->symbol entry-point) tbl))))
+    (define _tbl_ (fold-left add-entry '() defs))
+    (cdr (assq (string->symbol entry-point) _tbl_))))

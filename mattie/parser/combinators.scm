@@ -1,4 +1,4 @@
-(library (mattie parser stateful)
+(library (mattie parser combinators)
          (export term comp disj conj conc lmap
                  lang-f lang-t lang-0 lang-1
                  opt rep alt cat one-of parses)
