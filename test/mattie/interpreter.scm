@@ -10,7 +10,7 @@
      (assert (guard (_ (#t #t)) (make-interpreter "a <- b" "a") #f)))
     ("reject programs with a missing entry point"
      (assert (guard (_ (#t #t)) (make-interpreter "a <- b" "c") #f)))
-    ("match parentheses"
+    ("matched parentheses"
       (define matched-parens
         (make-interpreter "a <- \"(\" a \")\" | \"\"" "a"))
      (assert (parses matched-parens "((()))"))
@@ -29,4 +29,9 @@
         main <- even odd even")
      (define prog (make-interpreter src "main"))
      (assert (parses prog "032"))
-     (assert (not (parses prog "201")))))))
+     (assert (not (parses prog "201"))))
+    ("map matches to terminals"
+     (define prog (make-interpreter "a <- \"x\" -> \"hello \" \"world\"" "a"))
+     (assert (equal? (prog "x" "") (cons "" "hello world"))))
+       
+       )))

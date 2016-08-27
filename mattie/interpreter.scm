@@ -11,7 +11,8 @@
              (make-lang (cdr r) entry-point))))
 
   (define arities
-      `((cat . 2)
+      `((lcat . 2)
+        (rcat . 2)
         (alt . 2)
         (and . 2)
         (map . 2)
@@ -19,7 +20,8 @@
         (opt . 1)
         (neg . 1)
         (atom . 0)
-        (term . 0)
+        (lterm . 0)
+        (rterm . 0)
         (dot . 0)))
 
   (define (get-syms d)
@@ -49,11 +51,16 @@
 
   (define (make-lang defs entry-point)
     (define handlers
-      `((cat . ,conc)
+      `((lcat . ,conc)
+        (rcat . ,(lambda (a b) (lambda x (string-append
+                                           (apply a x)
+                                           (apply b x)))))
         (alt . ,disj)
         (and . ,conj)
-        (map . ,(lambda (a _) a)) ;; noop for now
-        (term . ,(lambda (t) (term (unescape-term t))))
+        (map . ,(lambda (a f) (lmap f a)))
+        (lterm . ,(lambda (t) (term (unescape-term t))))
+        (rterm . ,(lambda (t) (let ((s (unescape-term t)))
+                                (lambda _ s))))
         (opt . ,opt)
         (neg . ,comp)
         (dot . ,(lambda _ lang-1))

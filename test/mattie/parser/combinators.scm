@@ -57,13 +57,22 @@
      (assert (parses lang-1 "."))
      (assert (not (parses lang-1 ""))))
 
-
-    ("stateful parsing"
+    ("state threading w/ lmap"
      (define count-ones
        (rep (lmap (lambda (s st)
                     (if (string=? s "1")
                       (string-append "." st)
                       st))
                   (alt "0" "1"))))
-     (assert (string=? (final-state count-ones "00010100110" "") "...."))))
-    ))
+     (assert (string=? (final-state count-ones "00010100110" "") "....")))
+
+    ("lmapped fns not called when running stateless"
+     (define ran-stateless #t)
+     (define p (lmap (lambda (s _)
+                       (set! ran-stateless #f)
+                       (string->number s))
+                     (cat digit (rep digit))))
+     (assert (string=? "" (run-stateless p "12345")))
+     (assert ran-stateless))
+
+    )))

@@ -18,14 +18,18 @@
     (one-of "0123456789"))
   (define ws* (rep (one-of " \n\t\r\f")))
 
+  (define (notp a b) (conj (comp a) b))
+
   (define word
     (let* ((word-start (disj english-letter (one-of "_")))
            (word-cont (alt word-start decimal-digit (term "-"))))
       (tag-terminal 'atom (conc word-start (rep word-cont)))))
 
-  (define term-
-    (let ((term-part (disj (term "\\\"") (conj (comp (term "\"")) lang-1))))
-      (tag-terminal 'term (cat (term "\"") (rep term-part) (term "\"")))))
+  (define term-base
+    (let ((term-part (disj (term "\\\"") (notp (term "\"") lang-1))))
+      (cat (term "\"") (rep term-part) (term "\""))))
+  (define lterm (tag-terminal 'lterm term-base))
+  (define rterm (tag-terminal 'rterm term-base))
 
   (define (packrat p)
     (let ((ht (make-hashtable equal-hash equal?)))
@@ -42,16 +46,20 @@
   ;; this is a thunk so packrat tables can be gc'd
   (define (make-language-parser)
     (define prec0 (packrat
-      (lambda (s st) ((alt paren term- dot (conj (comp defn) word)) s st))))
+      (lambda (s st) ((alt paren lterm dot (notp defn word)) s st))))
     (define prec1 (packrat (cat prec0 (rep (alt rep- opt- neg-)))))
     (define prec2 (packrat (lambda (s st) ((disj cat- prec1) s st))))
     (define prec3 (packrat (lambda (s st) ((disj and- prec2) s st))))
     (define prec4 (packrat (lambda (s st) ((disj alt- prec3) s st))))
     (define prec5 (packrat (lambda (s st) ((disj map- prec4) s st))))
+    (define (map-rhs-unit s st) ((disj rterm (notp defn word)) s st))
+    (define (map-rhs-cat s st)
+      ((tag-binary 'rcat (cat map-rhs-unit ws* (disj map-rhs-cat map-rhs-unit))) s st))
+    (define map-rhs (disj map-rhs-cat map-rhs-unit))
     (define (paren s st) ((cat (term "(") ws* prec5 ws* (term ")")) s st))
-    (define cat- (tag-binary 'cat (cat prec1 ws*                prec2)))
+    (define cat- (tag-binary 'lcat (cat prec1 ws*                prec2)))
     (define and- (tag-binary 'and (cat prec2 ws* (term "&") ws* prec3)))
     (define alt- (tag-binary 'alt (cat prec3 ws* (term "|") ws* prec4)))
-    (define map- (tag-binary 'map (cat prec4 ws* (term "->") ws* word)))
+    (define map- (tag-binary 'map (cat prec4 ws* (term "->") ws* map-rhs)))
     (define defn (tag-binary 'def (cat ws* word ws* (term "<-") ws* prec5)))
     (cat defn (rep defn) ws*)))

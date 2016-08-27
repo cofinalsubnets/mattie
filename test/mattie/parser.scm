@@ -29,8 +29,14 @@
        (assert (parses program "a <- \"bc\" \"q\"")))
       ("terminals containing escaped quotes"
        (assert (parses program "a <- \"\\\"\"")))
-      ("match application"
+      ("match application on an atom"
        (assert (parses program "a <- \"b\" -> q")))
+      ("match application on a terminal"
+       (assert (parses program "a <- \"b\" -> \"q\"")))
+      ("match application on a sequence of atoms and terminals"
+       (assert (parses program "a <- \"b\" -> q \"qwer\" x")))
+      ("match application followed by definition"
+       (assert (parses program "a <- \"b\" -> q x <- y")))
       ("concatenation precedes disjunction"
        (let ((r (program "a <- b c | d" "")))
          (assert (equal? (caddr (cadr r)) 'alt))))
@@ -42,7 +48,7 @@
          (assert (equal? (caddr (cadr r)) 'alt))))
       ("parentheses"
        (let ((r (program "a <- b (c | d)" "")))
-         (assert (equal? (caddr (cadr r)) 'cat))))
+         (assert (equal? (caddr (cadr r)) 'lcat))))
       ("nested parentheses"
        (assert (parses program "a <- ((b))")))
       ("multiple suffixes"
