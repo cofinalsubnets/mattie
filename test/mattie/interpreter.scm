@@ -19,4 +19,15 @@
      (assert (not (parses matched-parens "( )"))))
     ("multiple rules"
      (define prog (make-interpreter "a <- b b <- (c | d)* c <- \"a\" d <- \"bc\"" "a"))
-     (assert (parses prog "aaabcaaaabcbca"))))))
+     (assert (parses prog "aaabcaaaabcbca"))
+     (assert (not (parses prog "baaaac"))))
+    ("conc conj disj comp"
+     (define src
+       "digit <- \"0\" | \"1\" | \"2\" | \"3\"
+        odd <- \"1\" | \"3\"
+        even <- odd~ & digit
+        main <- even odd even")
+     (define prog (make-interpreter src "main"))
+     (assert (parses prog "032"))
+     (assert (not (parses prog "201"))))
+    )))

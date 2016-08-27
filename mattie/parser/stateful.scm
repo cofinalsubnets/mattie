@@ -1,9 +1,7 @@
 (library (mattie parser stateful)
          (export term comp disj conj conc lmap
                  lang-f lang-t lang-0 lang-1
-                 opt rep alt cat one-of
-                 ws ws* ws+ decimal-digit
-                 english-letter parses)
+                 opt rep alt cat one-of parses)
          (import (rnrs))
 
   (define (term t)
@@ -41,11 +39,11 @@
   (define (lang-1 s st) (and (> (string-length s) 0)
                              (cons (substring s 1 (string-length s)) st)))
 
-  (define (term~ x) (if (string? x) (term x) x))
+  (define (terminate x) (if (string? x) (term x) x))
   (define (opt l) (disj l lang-0))
   (define (rep l) (opt (conc l (lambda (s st) ((rep l) s st)))))
-  (define (alt . ls) (fold-right disj lang-f (map term~ ls)))
-  (define (cat . ls) (fold-right conc lang-0 (map term~ ls)))
+  (define (alt . ls) (fold-right disj lang-f (map terminate ls)))
+  (define (cat . ls) (fold-right conc lang-0 (map terminate ls)))
   (define (one-of cs)
     (let ((cs (string->list cs)))
       (lambda (s st)
@@ -53,12 +51,4 @@
           (and (> ls 0)
                (let* ((c (string-ref s 0))
                       (m (find (lambda (x) (char=? x c)) cs)))
-                 (and m (cons (substring s 1 ls) st))))))))
-
-  (define ws (one-of " \n\t\r"))
-  (define ws* (rep ws))
-  (define ws+ (conc ws ws*))
-  (define decimal-digit
-    (one-of "0123456789"))
-  (define english-letter
-    (one-of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")))
+                 (and m (cons (substring s 1 ls) st)))))))))

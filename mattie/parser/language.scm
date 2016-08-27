@@ -12,6 +12,12 @@
     (lmap (lambda (s st) (cons (cons t (cons (cadr st) (car st)))
                                (cddr st))) l))
 
+  (define english-letter
+    (one-of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+  (define decimal-digit
+    (one-of "0123456789"))
+  (define ws* (rep (one-of " \n\t\r\f")))
+
   (define word
     (let* ((word-start (disj english-letter (one-of "_")))
            (word-cont (alt word-start decimal-digit (term "-"))))
@@ -27,7 +33,6 @@
         (let ((v (hashtable-ref ht args '())))
           (if (null? v)
             (let ((r (apply p args))) (hashtable-set! ht args r) r) v)))))
-
 
   (define dot (tag-nullary 'dot (term ".")))
   (define rep- (tag-unary 'rep (term "*")))
