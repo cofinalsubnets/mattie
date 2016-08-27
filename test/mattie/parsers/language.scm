@@ -4,6 +4,7 @@
                  (rename (mattie parsers stateful) (contains parses))
                  (mattie parsers language)
                  (test util))
+  (define program (make-language-parser))
   (define (language-tests-for program)
     (tests
       ("one simple rule"
