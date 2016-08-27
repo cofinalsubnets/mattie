@@ -30,9 +30,9 @@
     (let* ((rs (run-tests ts (string-append name " ") 1 (length ts)))
            (fs (filter failed? rs)))
       (if (null? fs)
-        (show " - :D ok!\n")
+        (show " - :3 ok!\n")
         (begin
-          (show " - D: oh no\n" (length fs) " failures:\n")
+          (show " - 3: oh no\n" (length fs) " failures:\n")
           (let loop ((n 1) (f fs))
             (if (null? f) '()
               (begin

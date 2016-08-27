@@ -3,31 +3,31 @@
                  lang-f lang-t lang-0 lang-1
                  opt rep alt cat one-of parses
                  run-stateless)
-         (import (rnrs))
+         (import (rnrs) (mattie util))
 
   (define (term t)
-      (lambda (s st)
+      (λ (s st)
         (let ((lt (string-length t))
               (ls (string-length s)))
           (and (>= ls lt)
                (string=? t (substring s 0 lt))
                (cons (substring s lt ls) st)))))
 
-  (define (comp l) (lambda (s st) (and (not (l s st)) (cons "" st))))
-  (define (disj a b) (lambda (s st) (or (a s st) (b s st))))
+  (define (comp l) (λ (s st) (and (not (l s st)) (cons "" st))))
+  (define (disj a b) (λ (s st) (or (a s st) (b s st))))
 
   (define (conj a b)
-    (lambda (s st) (let ((ar (a s st))) (and ar (b s (cdr ar))))))
+    (λ (s st) (let ((ar (a s st))) (and ar (b s (cdr ar))))))
 
   (define (conc a b)
-    (lambda (s st) (let ((ar (a s st))) (and ar (b (car ar) (cdr ar))))))
+    (λ (s st) (let ((ar (a s st))) (and ar (b (car ar) (cdr ar))))))
 
   ;; hack to make sure state is ignored lmapped fns. it would be nice be able
   ;; to use gensym for this.
   (define signal-stateless (list '()))
 
   (define (lmap f l)
-    (lambda (s st)
+    (λ (s st)
       (let ((r (l s st)))
         (if (eq? st signal-stateless) r
           (and r (cons (car r)
@@ -48,11 +48,11 @@
 
   (define (terminate x) (if (string? x) (term x) x))
   (define (opt l) (disj l lang-0))
-  (define (rep l) (opt (conc l (lambda (s st) ((rep l) s st)))))
+  (define (rep l) (opt (conc l (λ (s st) ((rep l) s st)))))
   (define (alt . ls) (fold-right disj lang-f (map terminate ls)))
   (define (cat . ls) (fold-right conc lang-0 (map terminate ls)))
   (define (one-of cs)
     (let ((cs (string->list cs)))
-      (lambda (s st) (and (> (string-length s) 0)
-                          (memq (string-ref s 0) cs)
-                          (cons (substring s 1 (string-length s)) st))))))
+      (λ (s st) (and (> (string-length s) 0)
+                     (memq (string-ref s 0) cs)
+                     (cons (substring s 1 (string-length s)) st))))))

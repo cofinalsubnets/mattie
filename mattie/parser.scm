@@ -1,6 +1,6 @@
 (library (mattie parser)
          (export make-language-parser)
-         (import (rnrs) (mattie parser combinators))
+         (import (rnrs) (mattie util) (mattie parser combinators))
 
   (define (tag-terminal t l)
     (lmap (lambda (s st) (cons (cons t s) st)) l))
@@ -33,10 +33,11 @@
 
   (define (packrat p)
     (let ((ht (make-hashtable equal-hash equal?)))
-      (lambda args
-        (let ((v (hashtable-ref ht args '())))
-          (if (null? v)
-            (let ((r (apply p args))) (hashtable-set! ht args r) r) v)))))
+      (lambda args (let ((v (hashtable-ref ht args '())))
+                     (if (null? v)
+                       (let ((r (apply p args)))
+                         (hashtable-set! ht args r) r)
+                       v)))))
 
   (define dot (tag-nullary 'dot (term ".")))
   (define $ (tag-nullary 'state (term "$")))
@@ -44,23 +45,26 @@
   (define opt- (tag-unary 'opt (term "?")))
   (define neg- (tag-unary 'neg (term "~")))
 
-  ;; this is a thunk so packrat tables can be gc'd
+
   (define (make-language-parser)
     (define prec0 (packrat
       (lambda (s st) ((alt paren lterm dot (notp defn word)) s st))))
     (define prec1 (packrat (cat prec0 (rep (alt rep- opt- neg-)))))
-    (define prec2 (packrat (lambda (s st) ((disj cat- prec1) s st))))
-    (define prec3 (packrat (lambda (s st) ((disj and- prec2) s st))))
-    (define prec4 (packrat (lambda (s st) ((disj alt- prec3) s st))))
-    (define prec5 (packrat (lambda (s st) ((disj map- prec4) s st))))
+    (define-lazy prec2 (packrat (disj cat- prec1)))
+    (define-lazy prec3 (packrat (disj and- prec2)))
+    (define-lazy prec4 (packrat (disj alt- prec3)))
+
     (define (map-rhs-unit s st) ((alt $ rterm (notp defn word)) s st))
     (define (map-rhs-cat s st)
       ((tag-binary 'rcat (cat map-rhs-unit ws* (disj map-rhs-cat map-rhs-unit))) s st))
     (define map-rhs (disj map-rhs-cat map-rhs-unit))
-    (define (paren s st) ((cat (term "(") ws* prec5 ws* (term ")")) s st))
+    (define map- (tag-binary 'map (cat prec4 ws* (term "->") ws* map-rhs)))
+    (define prec5 (packrat (disj map- prec4)))
+
+    (define paren (cat (term "(") ws* prec5 ws* (term ")")))
     (define cat- (tag-binary 'lcat (cat prec1 ws*                prec2)))
     (define and- (tag-binary 'and (cat prec2 ws* (term "&") ws* prec3)))
     (define alt- (tag-binary 'alt (cat prec3 ws* (term "|") ws* prec4)))
-    (define map- (tag-binary 'map (cat prec4 ws* (term "->") ws* map-rhs)))
     (define defn (tag-binary 'def (cat ws* word ws* (term "<-") ws* prec5)))
-    (cat defn (rep defn) ws*)))
+    (define lang (cat defn (rep defn) ws*))
+    (lambda (s) (lang s '()))))

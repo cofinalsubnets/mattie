@@ -2,8 +2,9 @@
          (export parser-tests parser-tests-for)
          (import (rnrs)
                  (mattie parser)
-                 (mattie parser combinators)
                  (test util))
+
+  (define (parses p s) (let ((r (p s))) (and r (string=? (car r) ""))))
 
   (define (parser-tests-for program)
     (tests
@@ -40,21 +41,21 @@
       ("match application state reference"
        (assert (parses program "a <- \"b\" -> $ \".\"")))
       ("concatenation precedes disjunction"
-       (let ((r (program "a <- b c | d" "")))
+       (let ((r (program "a <- b c | d")))
          (assert (equal? (caddr (cadr r)) 'alt))))
       ("concatenation precedes conjunction"
-       (let ((r (program "a <- b c & d" "")))
+       (let ((r (program "a <- b c & d")))
          (assert (equal? (caddr (cadr r)) 'and))))
       ("conjunction precedes disjunction"
-       (let ((r (program "a <- b & c | d" "")))
+       (let ((r (program "a <- b & c | d")))
          (assert (equal? (caddr (cadr r)) 'alt))))
       ("parentheses"
-       (let ((r (program "a <- b (c | d)" "")))
+       (let ((r (program "a <- b (c | d)")))
          (assert (equal? (caddr (cadr r)) 'lcat))))
       ("nested parentheses"
        (assert (parses program "a <- ((b))")))
       ("multiple suffixes"
-       (let ((r (program "a <- b~*?" "")))
+       (let ((r (program "a <- b~*?")))
          (assert (equal? (caddr  (cadr r)) 'opt))
          (assert (equal? (cadddr (cadr r)) 'rep))
          (assert (equal? (cadddr (cdadr r)) 'neg))))
