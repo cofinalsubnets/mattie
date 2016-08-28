@@ -1,6 +1,7 @@
 (library (test mattie parser combinators)
          (export parser-combinator-tests)
          (import (rnrs)
+                 (mattie util)
                  (mattie parser combinators)
                  (test util))
 
@@ -75,5 +76,9 @@
                      (cat digit (rep digit))))
      (assert (string=? "" (run-stateless p "12345")))
      (assert ran-stateless))
-
-    )))
+    ("packrat parsers only parse a given string once"
+     (define count 0)
+     (define p (packrat (lmap (λ (_ st) (set! count (+ 1 count)) st)
+                              (term "."))))
+     (assert (equal? (p "." "") (p "." "")))
+     (assert (= count 1))))))

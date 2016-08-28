@@ -6,7 +6,7 @@
                  (test mattie interpreter))
 
   (define (show . xs) (for-each display xs))
-  (define (failed? t) (not (car t)))
+  (define (failed? t) (not (cadr t)))
 
   (define (run-tests ts p)
     (let ((l (length ts)))
