@@ -1,7 +1,14 @@
 (library (mattie parser combinators)
          (export term comp disj conj conc lmap lang-f lang-t lang-0 lang-1
-                 opt rep alt cat one-of language-contains? run-stateless)
+                 opt rep alt cat one-of language-contains? run-stateless
+                 packrat)
          (import (rnrs) (mattie util))
+
+  ;; a parser is a procedure that accepts a string (the input) and a state & 
+  ;; returns:
+  ;;   - on success, a pair comprising a string (the "unparsed" remainder; a
+  ;;     right-anchored substring of the input) and an updated state
+  ;;   - on failure, #f
 
   ;; terminal string
   (define (term t)
@@ -42,6 +49,7 @@
         (λ (s st) (and (> (string-length s) 0)
                        (memq (string-ref s 0) cs)
                        (cons (substring s 1 (string-length s)) st)))))
+
   ;; map a fn over a parser to be applied to its output state
   (define (lmap f l)
     (λ (s st)
@@ -60,8 +68,17 @@
   ;; just accept/reject a language)
   (define (run-stateless p s) (let-when ((r (p s no-st))) (car r)))
 
-  ;; check whether a string is in a parser's language
+  ;; check whether an entire string is in a parser's language
   (define (language-contains? l s) (equal? "" (run-stateless l s)))
+
+  ;; make a packrat (memoized) parser. in addition to being potentiallt way
+  ;; faster this also lets you handle left-recursive production rules (which
+  ;; we don't do yet)
+  (define (packrat p)
+    (let ((ht (make-hashtable equal-hash equal?)))
+      (λ xs (let ((v (hashtable-ref ht xs '())))
+              (if (null? v) (let ((r (apply p xs))) (hashtable-set! ht xs r) r)
+                            v)))))
 
   ;; empty language containing no strings
   (define lang-f (const #f))

@@ -1,5 +1,5 @@
 (library (test util)
-         (export test tests run-test passed? failed? run-test-suite)
+         (export test tests)
          (import (chezscheme))
 
   (define-syntax test
@@ -9,34 +9,4 @@
 
   (define-syntax tests
     (syntax-rules ()
-      ((tests (msg body ...) ...) (list (test msg body ...) ...))))
-
-  (define (run-test t)
-    (let ((r (t))) (display (if (cadr r) "." "X")) r))
-
-  (define passed? cadr)
-  (define (failed? tr) (not (passed? tr)))
-  (define (show . xs) (for-each display xs))
-
-  (define (map- f l) (if (null? l) '() (cons (f (car l)) (map- f (cdr l)))))
-
-  (define (run-tests ts p n l)
-    (if (null? ts) '()
-      (begin
-        (show "\r" p "(" n "/" l ")")
-        (cons ((car ts)) (run-tests (cdr ts) p (+ n 1) l)))))
-
-  (define (run-test-suite name ts)
-    (let* ((rs (run-tests ts (string-append name " ") 1 (length ts)))
-           (fs (filter failed? rs)))
-      (if (null? fs)
-        (show " - :3 ok!\n")
-        (begin
-          (show " - 3: oh no\n" (length fs) " failures:\n")
-          (let loop ((n 1) (f fs))
-            (if (null? f) '()
-              (begin
-                (show n ". " (caar f) "\n   ")
-                (display-condition (caddar f))
-                (newline)
-                (loop (+ n 1) (cdr f))))))))))
+      ((tests (msg body ...) ...) (list (test msg body ...) ...)))))

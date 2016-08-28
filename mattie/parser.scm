@@ -5,11 +5,11 @@
   (define (tag-terminal t l)
     (lmap (λ (s st) (cons (cons t s) st)) l))
   (define (tag-unary t l)
-    (lmap (λ (s st) (cons (cons t (car st)) (cdr st))) l))
+    (lmap (λ (_ st) (cons (cons t (car st)) (cdr st))) l))
   (define (tag-nullary t l)
-    (lmap (λ (s st) (cons (list t) st)) l))
+    (lmap (λ (_ st) (cons (list t) st)) l))
   (define (tag-binary t l)
-    (lmap (λ (s st) (cons (cons t (cons (cadr st) (car st))) (cddr st))) l))
+    (lmap (λ (_ st) (cons (cons t (cons (cadr st) (car st))) (cddr st))) l))
 
   (define english-letter
     (one-of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
@@ -28,14 +28,6 @@
       (cat (term "\"") (rep term-part) (term "\""))))
   (define lterm (tag-terminal 'lterm term-base))
   (define rterm (tag-terminal 'rterm term-base))
-
-  (define (packrat p)
-    (let ((ht (make-hashtable equal-hash equal?)))
-      (λ xs (let ((v (hashtable-ref ht xs '())))
-              (if (null? v)
-                (let ((r (apply p xs)))
-                  (hashtable-set! ht xs r) r)
-                v)))))
 
   (define dot (tag-nullary 'dot (term ".")))
   (define $ (tag-nullary 'state (term "$")))

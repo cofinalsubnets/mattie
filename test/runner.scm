@@ -1,9 +1,36 @@
 (library (test runner)
          (export run-all-tests)
-         (import (rnrs) (test util)
+         (import (chezscheme) (test util)
                  (test mattie parser combinators)
                  (test mattie parser)
                  (test mattie interpreter))
+
+  (define (show . xs) (for-each display xs))
+  (define (failed? t) (not (car t)))
+
+  (define (run-tests ts p)
+    (let ((l (length ts)))
+      (let loop ((ts ts) (n 0))
+        (show "\r" p " (" n "/" l ")")
+        (if (null? ts) '()
+          (let ((r ((car ts))))
+            (cons r (loop (cdr ts) (+ n 1))))))))
+
+  (define (run-test-suite name ts)
+    (let* ((rs (run-tests ts name))
+           (fs (filter failed? rs)))
+      (if (null? fs)
+        (show " - :3 ok!\n")
+        (begin
+          (show " - 3:< mrow\n" (length fs) " failures:\n")
+          (let loop ((n 1) (f fs))
+            (if (null? f) '()
+              (begin
+                (show n ". " (caar f) "\n   ")
+                (display-condition (caddar f))
+                (newline)
+                (loop (+ n 1) (cdr f)))))))))
+
   (define (run-all-tests)
     (run-test-suite "parser combinator tests" parser-combinator-tests)
     (run-test-suite "parser tests" parser-tests)

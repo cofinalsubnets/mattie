@@ -78,7 +78,7 @@
     (define handlers (cons (cons 'atom dispatch) base-handlers))
 
     (define (add-entry t d)
-        (cons (cons (string->symbol (cdadr d)) (linguify (cddr d) handlers)) t))
+        (cons (cons (string->symbol (cdadr d))(linguify (cddr d) handlers)) t))
 
     (define _tbl_ (fold-left add-entry '() defs))
     (cdr (assq (string->symbol entry-point) _tbl_))))
