@@ -1,4 +1,18 @@
-test:
-	@/usr/bin/env scheme-script ./run-tests.scm
+SS = petite --program
+SC = chez-scheme -q --optimize-level 2
+SRC = mattie/parser.scm mattie/interpreter.scm mattie/parser/combinators.scm
+OBJ = $(SRC:.scm=.so)
 
-.PHONY: test
+test:
+	@$(SS) run-tests.scm
+
+clean:
+	@find -name "*.so" -delete
+
+%.so: %.scm
+	@echo '(compile-file "$<")' | $(SC)
+
+mattie.so: $(OBJ)
+	@cat $(OBJ) > $@
+
+.PHONY: test clean

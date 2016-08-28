@@ -26,8 +26,10 @@
        (assert (language-contains? program "a <- b?")))
       ("dot"
        (assert (language-contains? program "a <- .")))
-      ("terminals"
+      ("\"-delimited terminals"
        (assert (language-contains? program "a <- \"bc\" \"q\"")))
+      ("'-initiated terminals"
+       (assert (language-contains? program "main <- 'b@c (. -> $ '.)*")))
       ("terminals containing escaped quotes"
        (assert (language-contains? program "a <- \"\\\"\"")))
       ("match application on an atom"
@@ -62,4 +64,4 @@
       ("leading & trailing whitespace"
        (assert (language-contains? program "  a <- \nb \t")))))
     
-  (define parser-tests (parser-tests-for (make-language-parser))))
+  (define parser-tests (parser-tests-for parse-language)))

@@ -1,5 +1,5 @@
 (library (mattie util)
-         (export id const compose define-lazy λ let-when)
+         (export const define-lazy λ let-when)
          (import (rnrs))
 
   (define-syntax λ (syntax-rules () ((λ ll x ...) (lambda ll x ...))))
@@ -17,6 +17,4 @@
        (let ((name expr)) (and name (let-when (bs ...) body ...))))
       ((let-when () body ...) (begin body ...))))
 
-  (define (id x) x)
-  (define (const x) (λ _ x))
-  (define (compose f g) (λ x (f (apply g x)))))
+  (define (const x) (λ _ x)))

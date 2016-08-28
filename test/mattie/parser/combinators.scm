@@ -5,8 +5,7 @@
                  (mattie parser combinators)
                  (test util))
 
-  (define digit
-    (alt "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"))
+  (define digit (one-of "0123456789"))
 
   (define (matched-parens s st)
     ((opt (cat (term "(") matched-parens (term ")"))) s st))
@@ -24,7 +23,7 @@
 
     ("disjunction"
      (assert (for-all (lambda (d) (language-contains? digit d))
-                      (list "1" "2" "3" "4" "5" "6" "7" "8" "9"))))
+                      (list "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"))))
 
     ("conjunction"
      (assert (language-contains? (conj lang-1 digit) "3"))
@@ -37,7 +36,7 @@
      (assert (not (language-contains? odd-digit "4"))))
 
     ("concatenation disjunction repetition"
-     (define hex-digit (alt digit "a" "b" "c" "d" "e" "f"))
+     (define hex-digit (alt digit (one-of "abcdef")))
      (define hex-number (cat (term "0x") hex-digit (rep hex-digit)))
      (assert (language-contains? hex-number "0x33dead55")))
 

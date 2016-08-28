@@ -6,25 +6,15 @@
                  (mattie parser combinators))
 
   (define (make-interpreter src entry-point)
-    (let ((r ((make-language-parser) src)))
+    (let ((r (parse-language src)))
       (assert r)
       (assert (string=? (car r) ""))
       (validate-defs (cdr r) entry-point)
       (make-lang (cdr r) entry-point)))
 
-  (define arities `((lcat . 2)
-                    (rcat . 2)
-                    (alt . 2)
-                    (and . 2)
-                    (map . 2)
-                    (rep . 1)
-                    (opt . 1)
-                    (neg . 1)
-                    (atom . 0)
-                    (lterm . 0)
-                    (rterm . 0)
-                    (dot . 0)
-                    (state . 0)))
+  (define arities `((lcat . 2) (rcat . 2) (alt . 2) (and . 2) (map . 2)
+                    (rep . 1) (opt . 1) (neg . 1)
+                    (atom . 0) (lterm . 0) (rterm . 0) (dot . 0) (state . 0)))
 
   (define (get-syms d)
     (if (eq? (car d) 'atom) (list (cdr d))
@@ -42,16 +32,18 @@
         (assert (null? undefined-rules)))))
 
   (define (unescape-term t)
-    (list->string
-      (let loop ((cs (string->list (substring t 1 (- (string-length t) 1)))))
-        (cond ((null? cs) cs)
-              ((char=? (car cs) #\\)
-               (assert (not (null? (cdr cs)))) ;; grammar should prevent this
-               (loop (cons (cadr cs) (cddr cs))))
-              (else (cons (car cs) (loop (cdr cs))))))))
+    (if (eq? #\' (string-ref t 0))
+      (substring t 1 (string-length t))
+      (list->string
+        (let loop ((cs (string->list (substring t 1 (- (string-length t) 1)))))
+          (cond ((null? cs) cs)
+                ((char=? (car cs) #\\)
+                 (assert (not (null? (cdr cs)))) ;; grammar should prevent this
+                 (loop (cons (cadr cs) (cddr cs))))
+                (else (cons (car cs) (loop (cdr cs)))))))))
 
-  (define base-handlers ;; everything except atoms, which are handled
-    `((lcat . ,conc)    ;; according to the production rule they name
+  (define static-handlers ;; everything except atoms, which are handled
+    `((lcat . ,conc)      ;; according to the production rule they name
       (rcat . ,(λ (a b) (λ x (string-append (apply a x) (apply b x)))))
       (alt . ,disj)
       (and . ,conj)
@@ -73,12 +65,13 @@
 
   (define (make-lang defs entry-point)
     (define (dispatch a)
-      (define-lazy f (cdr (assq (string->symbol a) _tbl_))) f)
+      (define-lazy f (cdr (assq (string->symbol a) rule-table))) f)
 
-    (define handlers (cons (cons 'atom dispatch) base-handlers))
+    (define handlers (cons (cons 'atom dispatch) static-handlers))
 
     (define (add-entry t d)
-        (cons (cons (string->symbol (cdadr d))(linguify (cddr d) handlers)) t))
+      (cons (cons (string->symbol (cdadr d))(linguify (cddr d) handlers)) t))
 
-    (define _tbl_ (fold-left add-entry '() defs))
-    (cdr (assq (string->symbol entry-point) _tbl_))))
+    (define rule-table (fold-left add-entry '() defs))
+
+    (cdr (assq (string->symbol entry-point) rule-table))))

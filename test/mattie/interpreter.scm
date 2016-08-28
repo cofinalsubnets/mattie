@@ -35,5 +35,4 @@
      (assert (equal? (prog "x" "") (cons "" "hello world"))))
     ("map matches to current state"
      (define count-xs (make-interpreter "x <- \"x\" -> $ \".\" y <- \"y\" b <- (x|y)*" "b"))
-     (assert (equal? (count-xs "xyyxyxxy" "") (cons "" "...."))))
-       )))
+     (assert (equal? (count-xs "xyyxyxxy" "") (cons "" "....")))))))
