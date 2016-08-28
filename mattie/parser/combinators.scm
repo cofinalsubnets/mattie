@@ -35,8 +35,10 @@
   ;; parse 1 or 0 times 
   (define (opt l) (disj l lang-0))
 
-  ;; parse 0 or more times
-  (define (rep l) (opt (conc l (λ x (apply (rep l) x)))))
+  ;; parse 0 or more times. implementing w/ opt/conc breaks tco :(
+  (define (rep l) (λ (s st)
+    (let ((r (l s st)))
+      (if r ((rep l) (car r) (cdr r)) (cons s st)))))
 
   ;; convenience fns for disj/conj that automatically turn strings into terms
   (define (alt . ls) (fold-right disj lang-f (map terminate ls)))
