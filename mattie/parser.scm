@@ -36,8 +36,9 @@
   (define rterm (tag-terminal 'rterm id term-base))
 
   (define any (tag-nullary 'dot (term ".")))
-  (define buf (tag-nullary 'buf (term "<>")))
-  (define eof   (tag-nullary 'eof (term "$")))
+  (define buf (tag-nullary 'buf (cat (term "<") ws* (term ">"))))
+  (define call (tag-unary 'call (cat (term "<") ws* word ws* (term ">"))))
+  (define eof  (tag-nullary 'eof (term "$")))
   (define rep- (tag-unary 'rep (term "*")))
   (define opt- (tag-unary 'opt (term "?")))
   (define neg- (tag-unary 'neg (term "~")))
@@ -50,10 +51,10 @@
     (define-lazy prec3 (packrat (disj and- prec2)))
     (define-lazy prec4 (packrat (disj alt- prec3)))
 
-    (define-lazy map-rhs-unit (alt buf rterm (notp defn word)))
-    (define-lazy map-rhs-cat
-      (tag-binary 'rcat (cat map-rhs-unit ws* (disj map-rhs-cat map-rhs-unit))))
-    (define map-rhs (disj map-rhs-cat map-rhs-unit))
+    (define-lazy map-rhs-1 (alt buf rterm call (notp defn word)))
+    (define-lazy map-rhs-2
+      (tag-binary 'rcat (cat map-rhs-1 ws* (disj map-rhs-2 map-rhs-1))))
+    (define map-rhs (disj map-rhs-2 map-rhs-1))
     (define map- (tag-binary 'map (cat prec4 ws* (term "->") ws* map-rhs)))
 
     (define prec5 (packrat (disj map- prec4)))

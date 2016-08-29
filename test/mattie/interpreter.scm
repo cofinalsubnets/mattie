@@ -37,6 +37,9 @@
     ("map matches to terminals"
      (define prog (make-interpreter "a <- \"x\" -> \"hello \" \"world\"" 'a))
      (assert (equal? (prog "x" "") (cons "" "hello world"))))
+    ("map matches to subparser calls"
+     (define prog (make-interpreter "a <- 'qqq -> <b> b <- .* -> 'bbb" 'a))
+     (assert (equal? (prog "qqq" "") (cons "" "bbb"))))
     ("map matches to current state"
      (define count-xs (make-interpreter "x <- \"x\" -> <> \".\" y <- \"y\" b <- (x|y)*" 'b))
      (assert (equal? (count-xs "xyyxyxxy" "") (cons "" "....")))))))

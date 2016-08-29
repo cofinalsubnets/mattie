@@ -14,7 +14,7 @@
 
   (define arities `((lcat . 2) (rcat . 2) (alt . 2) (and . 2) (map . 2)
                     (rep . 1) (opt . 1) (neg . 1) (atom . 0) (lterm . 0)
-                    (rterm . 0) (dot . 0) (buf . 0) (eof . 0)))
+                    (rterm . 0) (dot . 0) (buf . 0) (eof . 0) (call . 1)))
 
   (define (get-syms d)
     (if (eq? (car d) 'atom) (list (cdr d))
@@ -45,6 +45,7 @@
   (define static-handlers ;; everything except atoms, which are handled
     `((lcat . ,conc)      ;; according to the production rule they name
       (rcat . ,(λ (a b) (λ x (string-append (apply a x) (apply b x)))))
+      (call . ,(λ (f) (λ (s _) (let-when ((r (f s ""))) (cdr r)))))
       (alt . ,disj)
       (and . ,conj)
       (map . ,(λ (a f) (lmap f a)))
