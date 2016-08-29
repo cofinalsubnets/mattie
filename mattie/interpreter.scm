@@ -7,14 +7,14 @@
 
   (define (make-interpreter src entry-point)
     (let ((r (parse-language src)))
-      (assert r)
+      (assert (pair? r))
       (assert (string=? (car r) ""))
       (validate-defs (cdr r) entry-point)
       (make-lang (cdr r) entry-point)))
 
   (define arities `((lcat . 2) (rcat . 2) (alt . 2) (and . 2) (map . 2)
                     (rep . 1) (opt . 1) (neg . 1)
-                    (atom . 0) (lterm . 0) (rterm . 0) (dot . 0) (state . 0)))
+                    (atom . 0) (lterm . 0) (rterm . 0) (dot . 0) (buf . 0)))
 
   (define (get-syms d)
     (if (eq? (car d) 'atom) (list (cdr d))
@@ -25,20 +25,20 @@
 
   (define (validate-defs ds entry-point)
     (let ((rules (map cdadr ds)))
-      (assert (member entry-point rules))
-      (let* ((ss (map (λ (d) (get-syms (cddr d))) ds))
+      (assert (memq entry-point rules))
+      (let* ((ss (map (compose get-syms cddr) ds))
              (rs (fold-left append '() ss))
-             (undefined-rules (filter (λ (s) (not (member s rules))) rs)))
+             (undefined-rules (remp (λ (s) (memq s rules)) rs)))
         (assert (null? undefined-rules)))))
 
   (define (unescape-term t)
     (if (eq? #\' (string-ref t 0))
-      (substring t 1 (string-length t))
+      (string-drop 1 t)
       (list->string
-        (let loop ((cs (string->list (substring t 1 (- (string-length t) 1)))))
+        (let loop ((cs (string->list (string-drop 1 (string-drop-r 1 t)))))
           (cond ((null? cs) cs)
                 ((char=? (car cs) #\\)
-                 (assert (not (null? (cdr cs)))) ;; grammar should prevent this
+                 (assert (pair? (cdr cs))) ;; grammar should ensure this
                  (loop (cons (cadr cs) (cddr cs))))
                 (else (cons (car cs) (loop (cdr cs)))))))))
 
@@ -48,12 +48,12 @@
       (alt . ,disj)
       (and . ,conj)
       (map . ,(λ (a f) (lmap f a)))
-      (lterm . ,(λ (t) (term (unescape-term t))))
-      (rterm . ,(λ (t) (const (unescape-term t))))
+      (lterm . ,(compose term  unescape-term))
+      (rterm . ,(compose const unescape-term))
       (opt . ,opt)
       (neg . ,comp)
       (dot . ,(const lang-1))
-      (state . ,(const (λ (_ st) st)))
+      (buf . ,(const (λ (_ st) st)))
       (rep . ,(λ (l) (if (eq? l lang-1) lang-t (rep l))))))
 
   (define (linguify b hs)
@@ -64,14 +64,8 @@
              ((2) (list (linguify (cadr b) hs) (linguify (cddr b) hs))))))
 
   (define (make-lang defs entry-point)
-    (define (dispatch a)
-      (define-lazy f (cdr (assq (string->symbol a) rule-table))) f)
-
+    (define (dispatch a) (define-lazy f (cdr (assq a rule-table))) f)
     (define handlers (cons (cons 'atom dispatch) static-handlers))
-
-    (define (add-entry t d)
-      (cons (cons (string->symbol (cdadr d))(linguify (cddr d) handlers)) t))
-
-    (define rule-table (fold-left add-entry '() defs))
-
-    (cdr (assq (string->symbol entry-point) rule-table))))
+    (define (bind t d) (cons (cons (cdadr d) (linguify (cddr d) handlers)) t))
+    (define rule-table (fold-left bind '() defs))
+    (cdr (assq entry-point rule-table))))

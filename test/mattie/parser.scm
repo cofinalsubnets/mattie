@@ -29,7 +29,7 @@
       ("\"-delimited terminals"
        (assert (language-contains? program "a <- \"bc\" \"q\"")))
       ("'-initiated terminals"
-       (assert (language-contains? program "main <- 'b@c (. -> $ '.)*")))
+       (assert (language-contains? program "main <- 'b@c (. -> <> '.)*")))
       ("terminals containing escaped quotes"
        (assert (language-contains? program "a <- \"\\\"\"")))
       ("match application on an atom"
@@ -41,7 +41,7 @@
       ("match application followed by definition"
        (assert (language-contains? program "a <- \"b\" -> q x <- y")))
       ("match application state reference"
-       (assert (language-contains? program "a <- \"b\" -> $ \".\"")))
+       (assert (language-contains? program "a <- \"b\" -> <> \".\"")))
       ("concatenation precedes disjunction"
        (let ((r (program "a <- b c | d")))
          (assert (equal? (caddr (cadr r)) 'alt))))

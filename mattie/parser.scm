@@ -2,8 +2,8 @@
          (export parse-language)
          (import (rnrs) (mattie util) (mattie parser combinators))
 
-  (define (tag-terminal t l)
-    (lmap (λ (s st) (cons (cons t s) st)) l))
+  (define (tag-terminal t f l)
+    (lmap (λ (s st) (cons (cons t (f s)) st)) l))
   (define (tag-unary t l)
     (lmap (λ (_ st) (cons (cons t (car st)) (cdr st))) l))
   (define (tag-nullary t l)
@@ -23,20 +23,21 @@
            (word-cont (alt word-start decimal-digit (term "-"))))
       (conc word-start (rep word-cont))))
 
-  (define word (tag-terminal 'atom word-base))
+  (define word (tag-terminal 'atom string->symbol word-base))
 
   (define term-base
     (let* ((term-part (disj (term "\\\"") (notp (term "\"") lang-1)))
            (term-base-a (cat (term "\"") (rep term-part) (term "\"")))
-           (qtc (notp (one-of " \n\t\r\f()") lang-1))
+           (qtc (notp (one-of " \n\t\r\f()\"") lang-1))
            (term-base-b (conc (term "'") (conc qtc (rep qtc)))))
       (disj term-base-a term-base-b)))
 
-  (define lterm (tag-terminal 'lterm term-base))
-  (define rterm (tag-terminal 'rterm term-base))
+  (define lterm (tag-terminal 'lterm id term-base))
+  (define rterm (tag-terminal 'rterm id term-base))
 
   (define dot (tag-nullary 'dot (term ".")))
-  (define $ (tag-nullary 'state (term "$")))
+  (define buf (tag-nullary 'buf (term "<>")))
+  (define $   (tag-nullary 'eof (term "$")))
   (define rep- (tag-unary 'rep (term "*")))
   (define opt- (tag-unary 'opt (term "?")))
   (define neg- (tag-unary 'neg (term "~")))
@@ -49,7 +50,7 @@
     (define-lazy prec3 (packrat (disj and- prec2)))
     (define-lazy prec4 (packrat (disj alt- prec3)))
 
-    (define-lazy map-rhs-unit (alt $ rterm (notp defn word)))
+    (define-lazy map-rhs-unit (alt buf rterm (notp defn word)))
     (define-lazy map-rhs-cat
       (tag-binary 'rcat (cat map-rhs-unit ws* (disj map-rhs-cat map-rhs-unit))))
     (define map-rhs (disj map-rhs-cat map-rhs-unit))

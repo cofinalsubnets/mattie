@@ -1,10 +1,9 @@
-SS = petite --program
 SC = chez-scheme -q --optimize-level 2
 SRC = mattie/parser.scm mattie/interpreter.scm mattie/parser/combinators.scm
 OBJ = $(SRC:.scm=.so)
 
 test:
-	@$(SS) run-tests.scm
+	@./run-tests.scm
 
 clean:
 	@find -name "*.so" -delete

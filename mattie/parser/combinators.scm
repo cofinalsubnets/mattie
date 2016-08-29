@@ -12,12 +12,9 @@
 
   ;; terminal string
   (define (term t)
-      (λ (s st)
-        (let ((lt (string-length t))
-              (ls (string-length s)))
-          (and (>= ls lt)
-               (string=? t (substring s 0 lt))
-               (cons (substring s lt ls) st)))))
+    (λ (s st) (let ((l (string-length t)))
+                (and (string=? t (string-take l s))
+                     (cons (string-drop l s) st)))))
 
   ;; parser negation corresponding language complement
   (define (comp l) (λ (s st) (and (not (l s st)) (cons "" st))))
@@ -26,19 +23,19 @@
   (define (disj a b) (λ (s st) (or (a s st) (b s st))))
 
   ;; parser predication corresponding (approximately) to language intersection
-  (define (conj a b) (λ (s st) (let-when ((ar (a s st))) (b s (cdr ar)))))
+  (define (conj a b) (λ (s st) (let-when ((r (a s st))) (b s (cdr r)))))
 
   ;; parser catenation corresponding to { xy : x ∈ a, y ∈ b } for languages a b
-  (define (conc a b)
-    (λ (s st) (let-when ((ar (a s st))) (b (car ar) (cdr ar)))))
+  (define (conc a b) (λ (s st) (let-when ((r (a s st))) (b (car r) (cdr r)))))
 
   ;; parse 1 or 0 times 
   (define (opt l) (disj l lang-0))
 
-  ;; parse 0 or more times. implementing w/ opt/conc breaks tco :(
+  ;; parse 0 or more times. this is one of the main "looping" constructs so
+  ;; it's important that it not break tco!
   (define (rep l) (λ (s st)
-    (let ((r (l s st)))
-      (if r ((rep l) (car r) (cdr r)) (cons s st)))))
+    (let loop ((s s) (st st))
+      (let ((r (l s st))) (if r (loop (car r) (cdr r)) (cons s st))))))
 
   ;; convenience fns for disj/conj that automatically turn strings into terms
   (define (alt . ls) (fold-right disj lang-f (map terminate ls)))
@@ -50,7 +47,7 @@
       (let ((cs (string->list cs)))
         (λ (s st) (and (> (string-length s) 0)
                        (memq (string-ref s 0) cs)
-                       (cons (substring s 1 (string-length s)) st)))))
+                       (cons (string-drop 1 s) st)))))
 
   ;; map a fn over a parser to be applied to its output state
   (define (lmap f l)
@@ -58,8 +55,8 @@
       (if (eq? st no-st)
         (l s st)
         (let-when ((r (l s st)))
-          (cons (car r) (f (substring s 0 (- (string-length s)
-                                             (string-length (car r))))
+          (cons (car r) (f (string-take (- (string-length s)
+                                           (string-length (car r))) s)
                            (cdr r)))))))
 
   ;; hack to make lmap a noop when running statelessly. it would be nice be
@@ -93,4 +90,4 @@
 
   ;; language containing all 1-character strings
   (define (lang-1 s st) (and (> (string-length s) 0)
-                             (cons (substring s 1 (string-length s)) st))))
+                             (cons (string-drop 1 s) st))))

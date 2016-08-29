@@ -1,3 +1,5 @@
+#!/usr/bin/env scheme-script
+
 (import (rnrs) (mattie interpreter))
 
 (define (read-file path)
@@ -12,7 +14,7 @@
 (define source-files (cdr (command-line)))
 (define source (fold-right string-append "" (map read-file source-files)))
 
-(define interpret (make-interpreter source "main"))
+(define interpret (make-interpreter source 'main))
 
 (display (interpret (get-string-all (current-input-port)) ""))
 (newline)
