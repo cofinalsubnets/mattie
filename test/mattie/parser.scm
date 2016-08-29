@@ -42,6 +42,8 @@
        (assert (language-contains? program "a <- \"b\" -> q x <- y")))
       ("match application state reference"
        (assert (language-contains? program "a <- \"b\" -> <> \".\"")))
+      ("eof"
+       (assert (language-contains? program "a <- \"b\" $")))
       ("concatenation precedes disjunction"
        (let ((r (program "a <- b c | d")))
          (assert (equal? (caddr (cadr r)) 'alt))))

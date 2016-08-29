@@ -30,6 +30,10 @@
      (define prog (make-interpreter src 'main))
      (assert (language-contains? prog "032"))
      (assert (not (language-contains? prog "201"))))
+    ("eof"
+     (define prog (make-interpreter "a <- 'x . 'x $~ | 'xxx $" 'a))
+     (assert (language-contains? prog "xxx"))
+     (assert (not (language-contains? prog "xyx"))))
     ("map matches to terminals"
      (define prog (make-interpreter "a <- \"x\" -> \"hello \" \"world\"" 'a))
      (assert (equal? (prog "x" "") (cons "" "hello world"))))

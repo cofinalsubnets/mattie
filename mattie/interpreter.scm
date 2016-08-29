@@ -13,8 +13,8 @@
       (make-lang (cdr r) entry-point)))
 
   (define arities `((lcat . 2) (rcat . 2) (alt . 2) (and . 2) (map . 2)
-                    (rep . 1) (opt . 1) (neg . 1)
-                    (atom . 0) (lterm . 0) (rterm . 0) (dot . 0) (buf . 0)))
+                    (rep . 1) (opt . 1) (neg . 1) (atom . 0) (lterm . 0)
+                    (rterm . 0) (dot . 0) (buf . 0) (eof . 0)))
 
   (define (get-syms d)
     (if (eq? (car d) 'atom) (list (cdr d))
@@ -53,6 +53,7 @@
       (opt . ,opt)
       (neg . ,comp)
       (dot . ,(const lang-1))
+      (eof . ,(const lang-0))
       (buf . ,(const (λ (_ st) st)))
       (rep . ,(λ (l) (if (eq? l lang-1) lang-t (rep l))))))
 

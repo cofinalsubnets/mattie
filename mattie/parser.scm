@@ -35,16 +35,16 @@
   (define lterm (tag-terminal 'lterm id term-base))
   (define rterm (tag-terminal 'rterm id term-base))
 
-  (define dot (tag-nullary 'dot (term ".")))
+  (define any (tag-nullary 'dot (term ".")))
   (define buf (tag-nullary 'buf (term "<>")))
-  (define $   (tag-nullary 'eof (term "$")))
+  (define eof   (tag-nullary 'eof (term "$")))
   (define rep- (tag-unary 'rep (term "*")))
   (define opt- (tag-unary 'opt (term "?")))
   (define neg- (tag-unary 'neg (term "~")))
 
   ;; thunk'd so packrat hashtables can be gc'd
   (define (make-language-parser)
-    (define-lazy prec0 (packrat (alt paren lterm dot (notp defn word))))
+    (define-lazy prec0 (packrat (alt paren lterm eof any (notp defn word))))
     (define      prec1 (packrat (cat prec0 (rep (alt rep- opt- neg-)))))
     (define-lazy prec2 (packrat (disj cat- prec1)))
     (define-lazy prec3 (packrat (disj and- prec2)))
