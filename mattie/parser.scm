@@ -49,20 +49,20 @@
     (define      prec1 (packrat (cat prec0 (rep (alt rep- opt- neg-)))))
     (define-lazy prec2 (packrat (disj cat- prec1)))
     (define-lazy prec3 (packrat (disj and- prec2)))
-    (define-lazy prec4 (packrat (disj alt- prec3)))
+    (define-lazy prec4 (packrat (disj map- prec3)))
+    (define-lazy prec5 (packrat (disj alt- prec4)))
 
     (define-lazy map-rhs-1 (alt buf rterm call (notp defn word)))
     (define-lazy map-rhs-2
       (tag-binary 'rcat (cat map-rhs-1 ws* (disj map-rhs-2 map-rhs-1))))
     (define map-rhs (disj map-rhs-2 map-rhs-1))
-    (define map- (tag-binary 'map (cat prec4 ws* (term "->") ws* map-rhs)))
 
-    (define prec5 (packrat (disj map- prec4)))
 
     (define paren (cat (term "(") ws* prec5 ws* (term ")")))
     (define cat- (tag-binary 'lcat (cat prec1 ws*                prec2)))
     (define and- (tag-binary 'and (cat prec2 ws* (term "&") ws* prec3)))
-    (define alt- (tag-binary 'alt (cat prec3 ws* (term "|") ws* prec4)))
+    (define alt- (tag-binary 'alt (cat prec4 ws* (term "|") ws* prec5)))
+    (define map- (tag-binary 'map (cat prec3 ws* (term "->") ws* map-rhs)))
     (define defn (tag-binary 'def (cat ws* word ws* (term "<-") ws* prec5)))
     (define lang (cat defn (rep defn) ws*))
     (λ (s) (lang s '())))
