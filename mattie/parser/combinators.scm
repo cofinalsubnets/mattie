@@ -1,78 +1,63 @@
 (library (mattie parser combinators)
-         (export term comp disj conj conc lmap lang-f lang-t lang-0 lang-1
-                 opt rep alt cat one-of language-contains? run-stateless
-                 packrat)
-         (import (rnrs) (mattie util))
-
-  ;; a parser is a procedure that accepts a string (the input) and a state & 
-  ;; returns:
-  ;;   - on success, a pair comprising a string (the "unparsed" remainder; a
-  ;;     right-anchored substring of the input) and an updated state
-  ;;   - on failure, #f
+         (export term comp disj conj conc concs <* *> <*> lang-f lang-t lang-0 lang-1
+                 opt rep reps repc alt cat cats cat_ one-of language-contains?  packrat eof)
+         (import (rnrs) (mattie util) (mattie parser monad))
 
   ;; terminal string
   (define (term t)
-    (λ (s st) (let ((l (string-length t)))
-                (and (string=? t (string-take l s))
-                     (cons (string-drop l s) st)))))
+    (letm ((s get-pos))
+      (let ((l (string-length t)))
+        (if (string=? t (string-take l s))
+          (letm ((_ (set-pos (string-drop l s)))) (return t))
+          fail))))
 
   ;; parser negation corresponding language complement
-  (define (comp l) (λ (s st) (and (not (l s st)) (cons "" st))))
+  ;; rewrite this so it doesn't break the monad abstraction
+  (define (comp l) (λ (s) (if (l s) (fail s) (cons "" s))))
 
   ;; parser alternation corresponding to language union
-  (define (disj a b) (λ (s st) (or (a s st) (b s st))))
+  (define disj orm)
 
   ;; parser predication corresponding (approximately) to language intersection
-  (define (conj a b) (λ (s st) (let-when ((r (a s st))) (b s (cdr r)))))
+  (define (conj a b) (letm ((s get-pos) (_ a) (_ (set-pos s))) b))
 
   ;; parser catenation corresponding to { xy : x ∈ a, y ∈ b } for languages a b
-  (define (conc a b) (λ (s st) (let-when ((r (a s st))) (b (car r) (cdr r)))))
+  (define (conc f a b) (letm ((a a) (b b)) (return (f a b))))
+  (define (concs a b) (conc string-append a b))
+  (define (<* a b) (conc fst a b))
+  (define (*> a b) (conc snd a b))
+  (define (<*> a b) (conc cons a b))
 
   ;; parse 1 or 0 times 
   (define (opt l) (disj l lang-0))
 
   ;; parse 0 or more times. this is one of the main "looping" constructs so
-  ;; it's important that it not break tco!
-  (define (rep l) (λ (s st)
-    (let loop ((s s) (st st))
-      (let ((r (l s st))) (if r (loop (car r) (cdr r)) (cons s st))))))
+  ;; it's important that it not break tco! REMEMBER TO CHECK
+  (define (rep f i l) 'SERIOUSLY-THIS-CANT-BREAK-TCO 'VIOLATE-ABSTRACTIONS-IF-YOU-HAVE-TO
+    (orm (letm ((a l) (b (rep f i l))) (return (f a b)))
+         (letm ((_ lang-0)) (return i))))
+  (define (reps l) (rep string-append "" l))
+  (define (repc l) (rep cons '() l))
 
   ;; convenience fns for disj/conj that automatically turn strings into terms
   (define (alt . ls) (fold-right disj lang-f (map terminate ls)))
-  (define (cat . ls) (fold-right conc lang-0 (map terminate ls)))
+  (define (cat f i . ls) (fold-right (λ (a b) (conc f a b)) (fmap (const i) lang-0) (map terminate ls)))
+  (define (cats . ls) (apply cat (append (list string-append "") ls)))
+  (define (cat_ . ls) (apply cat (append (list (const #f) #f) ls)))
   (define (terminate x) (if (string? x) (term x) x))
 
   ;; convenience fn to make a parser that accepts any char of a given string
   (define (one-of cs)
-      (let ((cs (string->list cs)))
-        (λ (s st) (and (> (string-length s) 0)
-                       (memq (string-ref s 0) cs)
-                       (cons (string-drop 1 s) st)))))
-
-  ;; map a fn over a parser to be applied to its output state
-  (define (lmap f l)
-    (λ (s st)
-      (if (eq? st no-st)
-        (l s st)
-        (let-when ((r (l s st)))
-          (cons (car r) (f (string-take (- (string-length s)
-                                           (string-length (car r))) s)
-                           (cdr r)))))))
-
-  ;; hack to make lmap a noop when running statelessly. it would be nice be
-  ;; able to use gensym for this but i guess that's not portable?
-  (define no-st (list '()))
-
-  ;; run the parser without propagating any state (so it can't really parse,
-  ;; just accept/reject a language)
-  (define (run-stateless p s) (let-when ((r (p s no-st))) (car r)))
+    (let ((cs (string->list cs)))
+      (letm ((c lang-1)) (if (memq (string-ref c 0) cs) (return c) fail))))
 
   ;; check whether an entire string is in a parser's language
-  (define (language-contains? l s) (equal? "" (run-stateless l s)))
+  (define (language-contains? l s)
+    (let ((r (l s))) (and (pass? r) (string=? "" (state r)))))
 
-  ;; make a packrat (memoized) parser. in addition to being potentiallt way
-  ;; faster this also lets you handle left-recursive production rules (which
-  ;; we don't do yet)
+  ;; make a packrat (memoized) parser. in addition to being  way faster this
+  ;; lets you handle left-recursive production rules (in principle, we don't
+  ;; do that yet)
   (define (packrat p)
     (let ((ht (make-hashtable equal-hash equal?)))
       (λ xs (let ((v (hashtable-ref ht xs '())))
@@ -80,7 +65,7 @@
                             v)))))
 
   ;; empty language containing no strings
-  (define lang-f (const #f))
+  (define lang-f fail)
 
   ;; language containing all strings
   (define lang-t (comp lang-f))
@@ -89,5 +74,11 @@
   (define lang-0 (term ""))
 
   ;; language containing all 1-character strings
-  (define (lang-1 s st) (and (> (string-length s) 0)
-                             (cons (string-drop 1 s) st))))
+  (define lang-1
+    (letm ((s get-pos))
+      (if (> (string-length s) 0)
+        (letm ((_ (set-pos (string-drop 1 s))))
+          (return (string-take 1 s)))
+        fail)))
+
+  (define eof (comp lang-1)))

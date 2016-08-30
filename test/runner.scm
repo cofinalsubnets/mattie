@@ -14,7 +14,7 @@
         (show "\r" p " (" n "/" l ")")
         (if (null? ts) '()
           (let ((r ((car ts))))
-            (cons r (loop (cdr ts) (+ n 1))))))))
+            (cons r (loop (cdr ts) (if (failed? r) n (+ n 1)))))))))
 
   (define (run-test-suite name ts)
     (let* ((rs (run-tests ts name))
@@ -34,4 +34,5 @@
   (define (run-all-tests)
     (run-test-suite "parser combinator tests" parser-combinator-tests)
     (run-test-suite "parser tests" parser-tests)
-    (run-test-suite "interpreter tests" interpreter-tests)))
+    (run-test-suite "interpreter tests" interpreter-tests)
+  ))

@@ -2,16 +2,13 @@
          (export parser-combinator-tests)
          (import (rnrs)
                  (mattie util)
+                 (mattie parser monad)
                  (mattie parser combinators)
                  (test util))
 
   (define digit (one-of "0123456789"))
 
-  (define (matched-parens s st)
-    ((opt (cat (term "(") matched-parens (term ")"))) s st))
-
-  (define (final-state p s i)
-    (let ((r (p s i))) (and r (string=? "" (car r)) (cdr r))))
+  (define-lazy matched-parens (opt (cats "(" matched-parens ")")))
 
   (define parser-combinator-tests (tests
 
@@ -37,7 +34,7 @@
 
     ("concatenation disjunction repetition"
      (define hex-digit (alt digit (one-of "abcdef")))
-     (define hex-number (cat (term "0x") hex-digit (rep hex-digit)))
+     (define hex-number (cats (term "0x") hex-digit (reps hex-digit)))
      (assert (language-contains? hex-number "0x33dead55")))
 
     ("matching parentheses"
@@ -58,26 +55,15 @@
      (assert (language-contains? lang-1 "."))
      (assert (not (language-contains? lang-1 ""))))
 
-    ("state threading w/ lmap"
+    ("counting"
      (define count-ones
-       (rep (lmap (lambda (s st)
-                    (if (string=? s "1")
-                      (string-append "." st)
-                      st))
-                  (alt "0" "1"))))
-     (assert (string=? (final-state count-ones "00010100110" "") "....")))
+       (reps (fmap (λ (s) (if (string=? s "1") "." ""))
+                   (alt "0" "1"))))
+     (assert (string=? (val (count-ones "00010100110")) "....")))
 
-    ("lmapped fns not called when running stateless"
-     (define ran-stateless #t)
-     (define p (lmap (lambda (s _)
-                       (set! ran-stateless #f)
-                       (string->number s))
-                     (cat digit (rep digit))))
-     (assert (string=? "" (run-stateless p "12345")))
-     (assert ran-stateless))
     ("packrat parsers only parse a given string once"
      (define count 0)
-     (define p (packrat (lmap (λ (_ st) (set! count (+ 1 count)) st)
+     (define p (packrat (fmap (λ (x) (set! count (+ 1 count)) x)
                               (term "."))))
-     (assert (equal? (p "." "") (p "." "")))
+     (assert (equal? (p ".") (p ".")))
      (assert (= count 1))))))

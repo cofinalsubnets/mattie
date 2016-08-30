@@ -4,7 +4,7 @@
                  (mattie parser)
                  (test util))
 
-  (define (language-contains? p s) (let ((r (p s))) (and r (string=? (car r) ""))))
+  (define (language-contains? p s) (p s))
 
   (define (parser-tests-for program)
     (tests
@@ -29,7 +29,7 @@
       ("\"-delimited terminals"
        (assert (language-contains? program "a <- \"bc\" \"q\"")))
       ("'-initiated terminals"
-       (assert (language-contains? program "main <- 'b@c (. -> <> '.)*")))
+       (assert (language-contains? program "main <- 'b@c (. -> '.)*")))
       ("terminals containing escaped quotes"
        (assert (language-contains? program "a <- \"\\\"\"")))
       ("match application on an atom"
@@ -40,31 +40,30 @@
        (assert (language-contains? program "a <- \"b\" -> q \"qwer\" x")))
       ("match application followed by definition"
        (assert (language-contains? program "a <- \"b\" -> q x <- y")))
-      ("match application state reference"
-       (assert (language-contains? program "a <- \"b\" -> <> \".\"")))
-      ("match ap procedure calls"
-       (assert (language-contains? program "a <- . -> <b>")))
       ("eof"
        (assert (language-contains? program "a <- \"b\" $")))
+      ("symbols are interned"
+       (define r (parse-language "a <- 'b"))
+       (assert (symbol? (cdadar r))))
       ("concatenation precedes disjunction"
        (let ((r (program "a <- b c | d")))
-         (assert (equal? (caddr (cadr r)) 'alt))))
+         (assert (equal? (caddar r) 'alt))))
       ("concatenation precedes conjunction"
        (let ((r (program "a <- b c & d")))
-         (assert (equal? (caddr (cadr r)) 'and))))
+         (assert (equal? (caddar r) 'and))))
       ("conjunction precedes disjunction"
        (let ((r (program "a <- b & c | d")))
-         (assert (equal? (caddr (cadr r)) 'alt))))
+         (assert (equal? (caddar r) 'alt))))
       ("parentheses"
        (let ((r (program "a <- b (c | d)")))
-         (assert (equal? (caddr (cadr r)) 'lcat))))
+         (assert (equal? (caddar r) 'lcat))))
       ("nested parentheses"
        (assert (language-contains? program "a <- ((b))")))
       ("multiple suffixes"
        (let ((r (program "a <- b~*?")))
-         (assert (equal? (caddr  (cadr r)) 'opt))
-         (assert (equal? (cadddr (cadr r)) 'rep))
-         (assert (equal? (cadddr (cdadr r)) 'neg))))
+         (assert (equal? (caddar  r) 'neg))
+         (assert (equal? (car (cdddar r)) 'rep))
+         (assert (equal? (cadr (cdddar r)) 'opt))))
       ("leading & trailing whitespace"
        (assert (language-contains? program "  a <- \nb \t")))))
     

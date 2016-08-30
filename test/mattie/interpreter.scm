@@ -7,9 +7,9 @@
 
   (define interpreter-tests (tests
     ("reject programs with undefined symbols"
-     (assert (guard (_ (#t #t)) (make-interpreter "a <- b" "a") #f)))
+     (assert (not (make-interpreter "a <- b" "a"))))
     ("reject programs with a missing entry point"
-     (assert (guard (_ (#t #t)) (make-interpreter "a <- b" "c") #f)))
+     (assert (not (make-interpreter "a <- b" "c"))))
     ("matched parentheses"
       (define matched-parens
         (make-interpreter "a <- \"(\" a \")\" | \"\"" 'a))
@@ -34,12 +34,15 @@
      (define prog (make-interpreter "a <- 'x . 'x $~ | 'xxx $" 'a))
      (assert (language-contains? prog "xxx"))
      (assert (not (language-contains? prog "xyx"))))
+    ("subparsers only succeed if they consume their entire input"
+     (define prog (make-interpreter "a <- 'bbb -> b b <- 'bb" 'a))
+     (assert (not (language-contains? prog "bbb"))))
     ("map matches to terminals"
      (define prog (make-interpreter "a <- \"x\" -> \"hello \" \"world\"" 'a))
-     (assert (equal? (prog "x" "") (cons "" "hello world"))))
+     (assert (equal? (prog "x") (cons "" "hello world"))))
     ("map matches to subparser calls"
-     (define prog (make-interpreter "a <- 'qqq -> <b> b <- .* -> 'bbb" 'a))
-     (assert (equal? (prog "qqq" "") (cons "" "bbb"))))
+     (define prog (make-interpreter "a <- 'qqq -> b b <- .* -> 'bbb" 'a))
+     (assert (equal? (prog "qqq") (cons "" "bbb"))))
     ("map matches to current state"
-     (define count-xs (make-interpreter "x <- \"x\" -> <> \".\" y <- \"y\" b <- (x|y)*" 'b))
-     (assert (equal? (count-xs "xyyxyxxy" "") (cons "" "....")))))))
+     (define count-xs (make-interpreter "x <- \"x\" -> \".\" y <- \"y\" -> \"\" b <- (x|y)*" 'b))
+     (assert (equal? (count-xs "xyyxyxxy") (cons "" "....")))))))
