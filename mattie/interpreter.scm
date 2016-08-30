@@ -66,8 +66,8 @@
              ((2) (list (linguify (cadr b) hs) (linguify (cddr b) hs))))))
 
   (define (make-lang defs entry-point)
-    (define (dispatch a) (define-lazy f (cdr (assq a rule-table))) f)
+    (define (dispatch a) (define-lazy f (cdr (assq a rules))) f)
     (define handlers (cons (cons 'atom dispatch) static-handlers))
-    (define (bind t d) (cons (cons (cdadr d) (linguify (cddr d) handlers)) t))
-    (define rule-table (fold-left bind '() defs))
-    (cdr (assq entry-point rule-table))))
+    (define (defn t d) (cons (cons (cdadr d) (linguify (cddr d) handlers)) t))
+    (define rules (fold-left defn '() defs))
+    (cdr (assq entry-point rules))))
