@@ -32,11 +32,10 @@
   (define (opt l) (disj l lang-0))
 
   ;; parse 0 or more times. this is one of the main "looping" constructs so
-  ;; it's important that it not break tco! REMEMBER TO CHECK
-  (define (rep f i l) 'SERIOUSLY-THIS-CANT-BREAK-TCO 'VIOLATE-ABSTRACTIONS-IF-YOU-HAVE-TO
-    (orm (letm ((a l) (b (rep f i l))) (return (f a b)))
-         (letm ((_ lang-0)) (return i))))
-  (define (reps l) (rep string-append "" l))
+  ;; it's important that it not break tco!
+  (define (rep f i l) (disj (fmap (const i) (conj (comp l) lang-0))
+                            (letm ((r l)) (λ (x) ((rep f (f r i) l) x)))))
+  (define (reps l) (rep (flip string-append) "" l))
   (define (repc l) (rep cons '() l))
 
   ;; convenience fns for disj/conj that automatically turn strings into terms
@@ -60,9 +59,9 @@
   ;; do that yet)
   (define (packrat p)
     (let ((ht (make-hashtable equal-hash equal?)))
-      (λ xs (let ((v (hashtable-ref ht xs '())))
-              (if (null? v) (let ((r (apply p xs))) (hashtable-set! ht xs r) r)
-                            v)))))
+      (λ xs (if (hashtable-contains? ht xs)
+              (hashtable-ref ht xs #f)
+              (let ((r (apply p xs))) (hashtable-set! ht xs r) r)))))
 
   ;; empty language containing no strings
   (define lang-f fail)

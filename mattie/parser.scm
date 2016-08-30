@@ -41,7 +41,8 @@
   ;; thunk'd so packrat hashtables can be gc'd
   (define (make-language-parser)
     (define-lazy prec0 (packrat (alt paren lterm eof- any (notp defn word))))
-    (define      prec1 (packrat (conc (λ (p ss) (fold-right cons p ss)) prec0 suff)))
+    (define prec1
+      (packrat (conc (λ (p ss) (fold-left (flip cons) p ss)) prec0 suff)))
     (define-lazy prec2 (packrat (disj cat- prec1)))
     (define-lazy prec3 (packrat (disj and- prec2)))
     (define-lazy prec4 (packrat (disj map- prec3)))
