@@ -5,18 +5,19 @@
 
   ;; terminal string
   (define (term t)
-    (letm ((s get-pos))
-      (let ((l (string-length t)))
-        (if (string=? t (string-take l s))
-          (letm ((_ (set-pos (string-drop l s)))) (return t))
+    (let ((l (string-length t)))
+      (letm ((s get-pos))
+        (if (string=? t (takes l s))
+          (letm ((_ (set-pos (drops l s)))) (return t))
           fail))))
 
   ;; parser negation corresponding language complement
-  ;; rewrite this so it doesn't break the monad abstraction
-  (define (comp l) (λ (s) (if (l s) (fail s) (cons "" s))))
+  (define (comp l)
+    (λ (x) (or (let-when fail? ((_ (l x))) (cons "" x)) (fail x))))
 
   ;; parser alternation corresponding to language union
-  (define disj orm)
+  (define (disj a b)
+    (λ (x) (or (let-when pass? ((r (a x))) r) (b x))))
 
   ;; parser predication corresponding (approximately) to language intersection
   (define (conj a b) (letm ((s get-pos) (_ a) (_ (set-pos s))) b))
@@ -24,8 +25,8 @@
   ;; parser catenation corresponding to { xy : x ∈ a, y ∈ b } for languages a b
   (define (conc f a b) (letm ((a a) (b b)) (return (f a b))))
   (define (concs a b) (conc string-append a b))
-  (define (<* a b) (conc fst a b))
-  (define (*> a b) (conc snd a b))
+  (define (<* a b) (conc (λ (x _) x) a b))
+  (define (*> a b) (conc (λ (_ y) y) a b))
   (define (<_> a b c) (<*> (<* a b) c))
   (define (_*_ a b c) (<* (*> a b) c))
   (define (<*> a b) (conc cons a b))
@@ -78,8 +79,7 @@
   (define lang-1
     (letm ((s get-pos))
       (if (> (string-length s) 0)
-        (letm ((_ (set-pos (string-drop 1 s))))
-          (return (string-take 1 s)))
+        (letm ((_ (set-pos (drops 1 s))))(return (takes 1 s)))
         fail)))
 
   (define eof (comp lang-1)))

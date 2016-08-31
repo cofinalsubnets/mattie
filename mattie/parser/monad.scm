@@ -1,5 +1,5 @@
 (library (mattie parser monad)
-         (export return bind join fmap mcomp get-pos set-pos letm fail fail? pass? orm state val)
+         (export return bind join fmap mcomp get-pos set-pos letm fail fail? pass? state val)
          (import (rnrs) (mattie util))
 
   (define state car)
@@ -14,8 +14,6 @@
 
   (define (bind m f)
     (λ (x) (let-when ((m (m x))) ((f (val m)) (state m)))))
-
-  (define (orm a b) (λ (x) (or (let-when pass? ((r (a x))) r) (b x))))
 
   (define (join m) (bind m id))
   (define (mcomp a b) (λ (x) (bind (a x) b)))

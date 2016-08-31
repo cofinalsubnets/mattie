@@ -24,9 +24,8 @@
     (let ((rules (map cdadr ds)))
       (and (memq entry-point rules)
            (let* ((ss (map (compose get-syms cddr) ds))
-                  (rs (fold-left append '() ss))
-                  (undefined-rules (remp (λ (s) (memq s rules)) rs)))
-             (null? undefined-rules)))))
+                  (rs (fold-left append '() ss)))
+             (null? (remp (λ (s) (memq s rules)) rs))))))
 
   (define (subp f)
     (λ (s) (letm ((s0 get-pos)
