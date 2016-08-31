@@ -47,6 +47,22 @@
      (define prog (interpret-mattie "a <- ('b -> 'xxx)!" 'a))
      (define s (with-output-to-string (lambda () (prog "b"))))
      (assert (string=? s "xxx")))
+    ("rule 110"
+     (define src "
+       rule110 <- '111 -> '0
+                | '110 -> '1
+                | '101 -> '1
+                | '100 -> '0
+                | '011 -> '1
+                | '010 -> '1
+                | '001 -> '1
+                | '000 -> '0
+       loop <- ... & main | .* -> \"\"
+       main <- (.(..)< -> rule110)*! ((.* -> \"\n\")! -> \"\") -> loop")
+      (define prog (interpret-mattie src 'main))
+      (assert (language-contains? prog "000"))
+      (let  ((output (with-output-to-string (lambda () (prog "00101")))))
+        (assert (string=? output "111\n0\n"))))
     ("map matches to current state"
      (define count-xs (interpret-mattie "x <- \"x\" -> \".\" y <- \"y\" -> \"\" b <- (x|y)*" 'b))
      (assert (equal? (count-xs "xyyxyxxy") (cons "" "....")))))))
