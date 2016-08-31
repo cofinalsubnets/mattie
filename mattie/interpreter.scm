@@ -38,8 +38,6 @@
 
   (define static-handlers ;; everything except atoms, which are handled
     `((lcat . ,concs)     ;; according to the production rule they name
-      (rcat . ,(λ (a b) (λ (s) (letm ((a (a s)) (b (b s)))
-                                 (return (string-append a b))))))
       (alt . ,disj)
       (and . ,conj)
       (map . ,bind)
@@ -49,7 +47,10 @@
       (neg . ,comp)
       (dot . ,lang-1)
       (eof . ,eof)
-      (rep . ,reps)))
+      (rep . ,reps)
+      (rcat . ,(λ (a b) (λ (s) (letm ((a (a s))
+                                      (b (b s)))
+                                 (return (string-append a b))))))))
 
   (define (linguify b hs)
     (let* ((k (if (pair? b) (car b) b))
@@ -61,10 +62,10 @@
                (h (linguify (cadr b) hs) (linguify (cddr b) hs))))))
 
   (define (make-lang defs entry-point)
-    (define (dispatchl a) (define-lazy f (cdr (assq a rules))) f)
-    (define dispatchr (compose subp dispatchl))
-    (define handlers (append static-handlers (list (cons 'atom dispatchl)
-                                                   (cons 'call dispatchr))))
+    (define (dispatch a) (define-lazy f (cdr (assq a rules))) f)
+    (define handlers
+      (append static-handlers (list (cons 'atom dispatch)
+                                    (cons 'call (compose subp dispatch)))))
     (define (defn t d) (cons (cons (cdadr d) (linguify (cddr d) handlers)) t))
     (define rules (fold-left defn '() defs))
     (cdr (assq entry-point rules))))

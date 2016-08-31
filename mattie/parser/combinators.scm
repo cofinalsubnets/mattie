@@ -1,5 +1,5 @@
 (library (mattie parser combinators)
-         (export term comp disj conj conc concs <* *> <*> lang-f lang-t lang-0 lang-1
+         (export term comp disj conj conc concs <* *> <*> <_> lang-f lang-t lang-0 lang-1
                  opt rep reps repc alt cat cats cat_ one-of language-contains?  packrat eof)
          (import (rnrs) (mattie util) (mattie parser monad))
 
@@ -26,6 +26,7 @@
   (define (concs a b) (conc string-append a b))
   (define (<* a b) (conc fst a b))
   (define (*> a b) (conc snd a b))
+  (define (<_> a b c) (<*> (<* a b) c))
   (define (<*> a b) (conc cons a b))
 
   ;; parse 1 or 0 times 

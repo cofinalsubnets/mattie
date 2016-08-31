@@ -49,15 +49,15 @@
     (define-lazy prec5 (packrat (disj alt- prec4)))
     (define-lazy map-rhs-1 (alt rterm (notp defn call)))
     (define-lazy map-rhs-2
-      (tag 'rcat (<*> (<* map-rhs-1 ws*) (disj map-rhs-2 map-rhs-1))))
+      (tag 'rcat (<_> map-rhs-1 ws* (disj map-rhs-2 map-rhs-1))))
     (define map-rhs (disj map-rhs-2 map-rhs-1))
 
     (define paren (<* (*> (cat_ "(" ws*) prec5) (cat_ ws* ")")))
-    (define cat- (tag 'lcat (<*> (<* prec1 ws*) prec2)))
-    (define and- (tag 'and (<*> (<* prec2 (cat_ ws* (term "&") ws*)) prec3)))
-    (define alt- (tag 'alt (<*> (<* prec4 (cat_ ws* (term "|") ws*)) prec5)))
-    (define map- (tag 'map (<*> (<* prec3 (cat_ ws* (term "->") ws*)) map-rhs)))
-    (define defn (tag 'def (<*> (*> ws* word) (*> (cat_ ws* (term "<-") ws*) prec5))))
+    (define cat- (tag 'lcat (<_> prec1 ws* prec2)))
+    (define and- (tag 'and (<_> prec2 (cat_ ws* (term "&") ws*) prec3)))
+    (define alt- (tag 'alt (<_> prec4 (cat_ ws* (term "|") ws*) prec5)))
+    (define map- (tag 'map (<_> prec3 (cat_ ws* (term "->") ws*) map-rhs)))
+    (define defn (tag 'def (<_> (*> ws* word) (cat_ ws* (term "<-") ws*) prec5)))
 
     (<* (<*> defn (repc defn)) ws*))
   
