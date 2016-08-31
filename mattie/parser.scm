@@ -35,12 +35,13 @@
   (define rep- (tagt 'rep (term "*")))
   (define opt- (tagt 'opt (term "?")))
   (define neg- (tagt 'neg (term "~")))
-  (define suff (repc (alt rep- opt- neg-)))
+  (define out  (tagt 'out (term "%")))
+  (define suff (repc (alt rep- opt- neg- out)))
   (define call (tag 'call (fmap string->symbol word-base)))
 
   ;; thunk'd so packrat hashtables can be gc'd
   (define (make-language-parser)
-    (define-lazy prec0 (packrat (alt paren lterm eof- any (notp defn word))))
+    (define-lazy prec0 (packrat (alt par lterm eof- any (notp defn word))))
     (define prec1
       (packrat (conc (λ (p ss) (fold-left (flip cons) p ss)) prec0 suff)))
     (define-lazy prec2 (packrat (disj cat- prec1)))
@@ -52,7 +53,7 @@
       (tag 'rcat (<_> map-rhs-1 ws* (disj map-rhs-2 map-rhs-1))))
     (define map-rhs (disj map-rhs-2 map-rhs-1))
 
-    (define paren (<* (*> (cat_ "(" ws*) prec5) (cat_ ws* ")")))
+    (define par (_*_ (cat_ "(" ws*) prec5 (cat_ ws* ")")))
     (define cat- (tag 'lcat (<_> prec1 ws* prec2)))
     (define and- (tag 'and (<_> prec2 (cat_ ws* (term "&") ws*) prec3)))
     (define alt- (tag 'alt (<_> prec4 (cat_ ws* (term "|") ws*) prec5)))

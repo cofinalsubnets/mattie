@@ -16,7 +16,7 @@
           ((eq? (car d) 'atom) (list (cdr d)))
           (#t (case (car d)
                 ((atom lterm rterm dot eof) '())
-                ((rep opt neg call) (get-syms (cdr d)))
+                ((rep opt neg call out) (get-syms (cdr d)))
                 ((lcat rcat alt and map)
                  (append (get-syms (cadr d)) (get-syms (cddr d))))))))
 
@@ -48,6 +48,7 @@
       (dot . ,lang-1)
       (eof . ,eof)
       (rep . ,reps)
+      (out . ,(λ (f) (bind f (λ (s) (display s) (return s)))))
       (rcat . ,(λ (a b) (λ (s) (letm ((a (a s))
                                       (b (b s)))
                                  (return (string-append a b))))))))
@@ -57,7 +58,7 @@
            (h (cdr (assq k hs))))
       (case k ((dot eof) h)
               ((atom lterm rterm call) (h (cdr b)))
-              ((rep opt neg) (h (linguify (cdr b) hs)))
+              ((rep opt neg out) (h (linguify (cdr b) hs)))
               ((lcat rcat alt and map)
                (h (linguify (cadr b) hs) (linguify (cddr b) hs))))))
 
