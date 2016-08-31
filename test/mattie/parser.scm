@@ -30,6 +30,11 @@
        (assert (language-contains? program "a <- \"bc\" \"q\"")))
       ("'-initiated terminals"
        (assert (language-contains? program "main <- 'b@c (. -> '.)*")))
+      ("'-terms don't include control chars"
+       (define r (program "a <- 'b*!"))
+       (assert (eq? (caddar r) 'out)))
+      ("whitespace can occur btwn an expr & its suffix"
+       (assert (language-contains? program "a <- 'b *")))
       ("terminals containing escaped quotes"
        (assert (language-contains? program "a <- \"\\\"\"")))
       ("match application on an atom"
@@ -43,7 +48,7 @@
       ("eof"
        (assert (language-contains? program "a <- \"b\" $")))
       ("symbols are interned"
-       (define r (parse-language "a <- 'b"))
+       (define r (program "a <- 'b"))
        (assert (symbol? (cdadar r))))
       ("concatenation precedes disjunction"
        (let ((r (program "a <- b c | d")))
@@ -61,10 +66,10 @@
        (assert (language-contains? program "a <- ((b))")))
       ("multiple suffixes"
        (let ((r (program "a <- b~*?")))
-         (assert (equal? (caddar  r) 'neg))
+         (assert (equal? (caddar  r) 'opt))
          (assert (equal? (car (cdddar r)) 'rep))
-         (assert (equal? (cadr (cdddar r)) 'opt))))
+         (assert (equal? (cadr (cdddar r)) 'neg))))
       ("leading & trailing whitespace"
        (assert (language-contains? program "  a <- \nb \t")))))
     
-  (define parser-tests (parser-tests-for parse-language)))
+  (define parser-tests (parser-tests-for parse-mattie)))

@@ -1,6 +1,9 @@
 (library (mattie parser)
-         (export parse-language)
-         (import (rnrs) (mattie util) (mattie parser combinators) (mattie parser monad))
+         (export parse-mattie)
+         (import (rnrs)
+                 (mattie util)
+                 (mattie parser combinators)
+                 (mattie parser monad))
 
   (define (tag t l) (fmap (λ (r) (cons t r)) l))
   (define (tagt t l) (fmap (const t) l))
@@ -20,7 +23,7 @@
     (let* ((term-part (disj (fmap (const "\"") (term "\\\""))
                             (notp (term "\"") lang-1)))
            (term-base-a (_*_ (term "\"") (reps term-part) (term "\"")))
-           (qtc (notp (one-of " \n\t\r\f()\"") lang-1))
+           (qtc (notp (one-of " \n\t\r\f()\"*!?<$~") lang-1))
            (term-base-b (*> (term "'") (concs qtc (reps qtc)))))
       (disj term-base-a term-base-b)))
 
@@ -33,13 +36,14 @@
   (define opt- (tagt 'opt (term "?")))
   (define neg- (tagt 'neg (term "~")))
   (define out  (tagt 'out (term "!")))
-  (define suff (repc (alt rep- opt- neg- out)))
+  (define rw   (tagt 'rw  (term "<")))
+  (define suff (repc (alt rep- opt- neg- out rw)))
 
   ;; it's a thunk so packrat hashtables can be gc'd
-  (define (make-language-parser)
+  (define (make-parser)
     (define-lazy prec0 (packrat (alt par lterm eof- any (notp def atom))))
     (define prec1
-      (packrat (conc (λ (p ss) (fold-left (flip cons) p ss)) prec0 suff)))
+      (packrat (conc (λ (p ss) (fold-right cons p ss)) (<* prec0 ws*) suff)))
     (define-lazy prec2 (packrat (disj cat- prec1)))
     (define-lazy prec3 (packrat (disj and- prec2)))
 
@@ -60,6 +64,6 @@
 
     (<* (<*> def (repc def)) ws*))
   
-  (define parse-language
+  (define parse-mattie
     (compose (λ (x) (if (pass? x) (val x) x))
-             (letm ((r (make-language-parser)) (_ eof)) (return r)))))
+             (letm ((r (make-parser)) (_ eof)) (return r)))))
