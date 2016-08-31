@@ -1,6 +1,7 @@
 (library (test runner)
          (export run-all-tests)
          (import (chezscheme) (test util)
+                 (test mattie parser monad)
                  (test mattie parser combinators)
                  (test mattie parser)
                  (test mattie interpreter))
@@ -32,6 +33,7 @@
                 (loop (+ n 1) (cdr f)))))))))
 
   (define (run-all-tests)
+    (run-test-suite "parser monad tests" parser-monad-tests)
     (run-test-suite "parser combinator tests" parser-combinator-tests)
     (run-test-suite "parser tests" parser-tests)
     (run-test-suite "interpreter tests" interpreter-tests)
